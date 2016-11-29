@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ajax设计方案测试</title>
+</head>
+<body>
+<!--大家可以自己做一些测试，如果有一些建议，希望大家可以一起研究研究-->
+</body>
+</html>
+<script type="text/javascript" src="ajax-1.0.min.js"></script>
+<script>
+        +(function(){
+			var ajaxParam ={
+            type:"post",
+//            url:"http://192.168.1.118:2211/api/weixin/ajaxT2/",
+            url:"/api/ajax1/ajaxT1/",
+            data:{"name":"仲强","age":"888"},
+            success:function(data){
+                //document.body.innerHTML =data;
+                alert(data);
+            },
+            error:function(x,xx,xxx){
+                document.body.innerHTML =xx;
+            },
+            timeout:function(x,xx,xxx){
+                document.body.innerHTML =xx;
+            }
+        };
+//        ajax.common(ajaxParam);
+        ajax.post("/api/ajax1/ajaxT1/",{"name":"测试异步post请求","age":"success"},function(data){alert(data)});
+//        ajax.get("/api/ajax1/ajaxT2/",{"name":"测试异步get请求","age":"success"},function(data){alert(data)});
+//        ajax.get_sync("/api/ajax1/ajaxT2/",{"name":"测试同步get请求","age":"success"},function(data){alert(data)});
+//        ajax.post_sync("/api/ajax1/ajaxT1/",{"name":"测试同步post请求","age":"success"},function(data){alert(data)});
+//        ajax.get_cross("http://192.168.0.3:2211/api/weixin/ajaxT3/",{"name":"测试跨域get请求","age":"success"},function(data){alert(data)});
+//        ajax.post_cross("http://192.168.0.3:2211/api/weixin/ajaxT2/",{"name":"测试跨域post请求","age":"success"},function(data){alert(data)});
+        })()
+</script>
