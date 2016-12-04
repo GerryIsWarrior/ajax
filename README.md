@@ -109,7 +109,7 @@
 ####前端同源测试代码
     ajax.post("/api/ajax1/ajaxT1/",{"name":"测试异步post请求","age":"success"},function(data){alert(data)});  //该接口在1122上
 ####前端跨域测试代码
-    ajax.post_cross("http://192.168.0.3:2211/api/weixin/ajaxT2/",{"name":"测试跨域post请求","age":"success"},function(data){alert(data)});
+    ajax.post("http://192.168.0.3:2211/api/weixin/ajaxT2/",{"name":"测试跨域post请求","age":"success"},function(data){alert(data)});
 ####后端跨域接口代码
     /// <summary>
     /// 测试跨域请求
@@ -174,7 +174,7 @@
   * 异步post请求  --  ajax.post
   * 同步post请求  --  ajax.postSync
   * 通用配置请求  --  ajax.common
-PS：该方法为方便使用，不用的可以直接使用生产版本，只有common,get,post方法 
+PS：该方法为方便使用，不用的可以直接使用生产版本，只有common方法 
 
 ####连续搞了半个月的研究，研究ajax的设计方案，总体说来还是有很大的收获的，对浏览器的了解，js的了解，服务器技术的了解，后端的温习还是有很大的进步的，特别是解决问题的能力，感觉又上了一个level，虽然暂时还没去大公司，还在小公司游荡，但是从没有放弃对技术执着的追求。下一个目标bat，希望可以通过我的努力，进去，再接受一番洗礼。不过到时候有人内推就好了，哎。为了前端架构师的梦想，为了自己的前端架构，继续加油努力下去。技术的未来，不会远...
 
