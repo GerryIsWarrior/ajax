@@ -1,11 +1,12 @@
 /**
- * purpose：     ajax通用解决方案
+ * purpose：     ajax精简版本
  * author：      仲强
- * version:      1.2
- * date:         2016-12-2
+ * version:      1.3
+ * date:         2016-12-4
  * email:        gerry.zhong@outlook.com
  * update:          --1.1 去除跨域请求头部设置   ==> author: keepfool (cnblogs)
  *                  --1.2 更新tool方法，完善结构  ==> author: pod4g  (github)
+ *					--1.3 去除参数中的跨域设置，post方法已经支持跨域   ==>author: wYhooo  (github)
  *
  */
 (function(window){
@@ -15,7 +16,6 @@
         url:"",                                 //请求接口
         data:"",                                //请求参数（格式：json对象）  例子：{"name":"gerry","age":"88"}
         async:true,                             //同|异步请求 （异步：true 同步：false）
-        crossDomain:false,                     //是否为跨域请求（跨域：true 非跨域：false）
         dataType:'',                            //返回值处理（可拓展）   目前只实现：JSON
         success:function(data){},               //请求成功处理事件
         error:function(x,xx,xxx){},             //请求失败处理事件
@@ -191,31 +191,7 @@
 
             //发送请求
             xhr.send((function(result){result == undefined?(result =null):(null);return result;})(this.postParam));
-        },
-        //异步get请求
-        get:function(url,data,success,error,timeout){
-            var ajaxParam ={
-                type:"get",
-                url:url,
-                data:data,
-                success:success,
-                error:error,
-                timeout:timeout
-            };
-            ajax.common(ajaxParam);
-        },
-        //异步post请求
-        post:function(url,data,success,error,timeout){
-            var ajaxParam ={
-                type:"post",
-                url:url,
-                data:data,
-                success:success,
-                error:error,
-                timeout:timeout
-            };
-            ajax.common(ajaxParam);
-        },
+        }
     };
 
     var outputObj = function(){

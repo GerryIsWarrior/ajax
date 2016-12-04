@@ -172,10 +172,7 @@
 ####具体代码已封装成一个js库，供大家根据项目需求，自己开发定制，不过我已经封装了一些常用请求
   * 异步get请求  --  ajax.get
   * 异步post请求  --  ajax.post
-  * 同步get请求  --  ajax.getSync
   * 同步post请求  --  ajax.postSync
-  * 跨域get请求  --  ajax.getCross
-  * 跨域post请求  --  ajax.postCross
   * 通用配置请求  --  ajax.common
 PS：该方法为方便使用，不用的可以直接使用生产版本，只有common,get,post方法 
 
@@ -184,6 +181,7 @@ PS：该方法为方便使用，不用的可以直接使用生产版本，只有
 ###版本更新介绍
   1. 跨域不需要在前端设置跨域请求报文头，现已删除   ==>author:keepfool from cnblog
   2. 更新tool一些方法，拥抱es5+新技术				==>author:pod4g from github  
+  3. 删除头部参数中的跨域参数设置					==>author:wYhooo from github
   
 ####个人介绍
   * 性别：男

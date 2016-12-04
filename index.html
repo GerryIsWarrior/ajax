@@ -8,14 +8,14 @@
 <!--大家可以自己做一些测试，如果有一些建议，希望大家可以一起研究研究-->
 </body>
 </html>
-<script type="text/javascript" src="ajax-dev/ajax-1.2.min.js"></script>
+<script type="text/javascript" src="ajax-dev/ajax-1.3.min.js"></script>
 <script>
         +(function(){
 			var ajaxParam ={
             type:"post",
-//            url:"http://192.168.1.118:2211/api/weixin/ajaxT2/",
-            url:"/api/ajax1/ajaxT1/",
-            data:{"name":"gerry","age":"888"},
+            url:"http://zhong123893.oicp.net/api/weixin/ajaxT2/",
+//            url:"/api/ajax1/ajaxT1/",
+            data:{"name":"gerry","age":"0000"},
             success:function(data){
                 //document.body.innerHTML =data;
                 alert(data);
@@ -28,11 +28,8 @@
             }
         };
 //        ajax.common(ajaxParam);
-        ajax.post("/api/ajax1/ajaxT1/",{"name":"测试异步post请求","age":"success"},function(data){alert(data)});
+        ajax.post("zhong123893.oicp.net/api/weixin/ajaxT2/",{"name":"测试异步post请求","age":"success"},function(data){alert(data)});
 //        ajax.get("/api/ajax1/ajaxT2/",{"name":"测试异步get请求","age":"success"},function(data){alert(data)});
-//        ajax.getSync("/api/ajax1/ajaxT2/",{"name":"测试同步get请求","age":"success"},function(data){alert(data)});
 //        ajax.postSync("/api/ajax1/ajaxT1/",{"name":"测试同步post请求","age":"success"},function(data){alert(data)});
-//        ajax.getCross("http://192.168.0.3:2211/api/weixin/ajaxT3/",{"name":"测试跨域get请求","age":"success"},function(data){alert(data)});
-//        ajax.postCross("http://192.168.0.3:2211/api/weixin/ajaxT2/",{"name":"测试跨域post请求","age":"success"},function(data){alert(data)});
         })()
 </script>
