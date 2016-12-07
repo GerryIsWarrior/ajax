@@ -252,12 +252,11 @@
                 async:false,
                 success:function(date){
                     successEvent(data);
-                    //var timer = setTimeout(
-                    //function(){
-                    tempObj.longPolling(url,data,successEvent,isAll,errorEvent,timeoutEvent);
-                    //},timeFrequency);
+                    var timer = setTimeout(function(){
+                        tempObj.longPolling(url,data,successEvent,isAll,errorEvent,timeoutEvent);
+                    },timeFrequency);
                     //业务需求判断，是否只需要得到一次结果
-                    //if (!isAll) clearTimeout(timer);
+                    if (!isAll) clearTimeout(timer);
                 },
                 //如果走了error说明该接口有问题，没必要继续下去了
                 error:errorEvent,
