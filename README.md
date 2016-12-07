@@ -169,12 +169,57 @@
 ######edge
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129231145693-678151401.png)
 
-
+####轮询技术的实现
+    /*
+    * 长轮询的实现
+    *   a. 业务上只需要得到服务器一次响应的轮询
+    *   b. 业务上需要无限次得到服务器响应的轮询
+    *
+    *   param: url   请求接口地址
+    *          data  请求参数
+    *          successEvent    成功事件处理
+    *          isAll           是否一直请求（例如，等待付款完成业务，只需要请求一次）
+    *          timeout         ajax超时时间
+    *          timeFrequency   每隔多少时间发送一次请求
+    *          error           错误事件
+    *          timeout         超时处理
+    * */
+    longPolling:function(url,data,successEvent,isAll,timeout,timeFrequency,errorEvent,timeoutEvent){
+       var ajaxParam ={
+           time:timeout,
+           type:"post",
+           url:url,
+           data:data,
+           async:false,
+           success:function(date){
+               successEvent(data);
+               var timer = setTimeout(
+                   function(){
+                       tempObj.longPolling(url,data,successEvent,isAll,error,timeoutEvent);
+                   },timeFrequency);
+               //业务需求判断，是否只需要得到一次结果
+               if (!isAll) clearTimeout(timer);
+           },
+           //如果走了error说明该接口有问题，没必要继续下去了
+           error:errorEvent,
+           timeout:function(){
+               timeoutEvent();
+               setTimeout(function(){
+                   tempObj.longPolling(url,data,successEvent,isAll,error,timeoutEvent)
+               },timeFrequency);
+           }
+       };
+       ajax.common(ajaxParam);
+    }
+> 考虑到业务需求，集成了一次isAll参数有2个意义
+>> 聊天系统会要一直需求轮询，不间断的向后台使用数据，所以isAll = true
+>> 等待付款业务只需要得到后台一次响应是否支付成功，所以isAll = false
 
 ####具体代码已封装成一个js库，供大家根据项目需求，自己开发定制，不过我已经封装了一些常用请求
   * 异步get请求  --  ajax.get
   * 异步post请求  --  ajax.post
   * 同步post请求  --  ajax.postSync
+  * 轮询请求      --  ajax.longPolling
   * 通用配置请求  --  ajax.common
 PS：该方法为方便使用，不用的可以直接使用生产版本，只有common方法 
 
@@ -184,6 +229,7 @@ PS：该方法为方便使用，不用的可以直接使用生产版本，只有
   1. 跨域不需要在前端设置跨域请求报文头，现已删除   ==>author:keepfool from cnblog
   2. 更新tool一些方法，拥抱es5+新技术				==>author:pod4g from github  
   3. 删除头部参数中的跨域参数设置					==>author:wYhooo from github
+  4. 集成ajax的轮询技术
   
 ####个人介绍
   * 性别：男
