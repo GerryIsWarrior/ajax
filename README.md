@@ -230,6 +230,8 @@ PS：该方法为方便使用，不用的可以直接使用生产版本，只有
   2. 更新tool一些方法，拥抱es5+新技术				==>author:pod4g from github  
   3. 删除头部参数中的跨域参数设置					==>author:wYhooo from github
   4. 集成ajax的轮询技术        
+  
+####程序员的小笑话
 ![](http://images2015.cnblogs.com/blog/801930/201612/801930-20161210143609882-1515246004.gif)       
   
 ####个人介绍
