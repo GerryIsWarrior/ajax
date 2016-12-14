@@ -137,7 +137,7 @@
             xhr.onload===undefined?(xhr.xhr_ie8=true):(xhr.xhr_ie8=false);
 
             //参数处理（get和post）,包括xhr.open     get:拼接好url再open   post:先open，再设置其他参数
-            ajaxSetting.data === ""?(null):(xhr = tool.dealWithParam(ajaxSetting,this,xhr));
+            ajaxSetting.data === ""?(xhr.open(ajaxSetting.type.toUpperCase(), ajaxSetting.url, ajaxSetting.async)):(xhr = tool.dealWithParam(ajaxSetting,this,xhr));
 
             //设置超时时间（只有异步请求才有超时时间）
             ajaxSetting.async?(xhr.timeout = ajaxSetting.time):(null);
