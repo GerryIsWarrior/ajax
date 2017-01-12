@@ -169,7 +169,7 @@
 ######edge
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129231145693-678151401.png)
 
-####轮询技术的实现（需要后台接口支持）
+####1.4 版本更新  ---   轮询技术的实现（需要后台接口支持）
     /*
     * 长轮询的实现
     *   a. 业务上只需要得到服务器一次响应的轮询
@@ -213,24 +213,88 @@
     }
 > 考虑到业务需求，集成了一次isAll参数有2个意义
   >> 聊天系统会要一直需求轮询，不间断的向后台使用数据，所以isAll = true        
-  >> 等待付款业务只需要得到后台一次响应是否支付成功，所以isAll = false
+  >> 等待付款业务只需要得到后台一次响应是否支付成功，所以isAll = false        
+
+####1.5版本更新  ---   ajax的上传文件技术
+    /*
+    *   ajax上传文件
+    *       url                 文件上传地址
+    *       fileSelector        input=file 选择器
+    *       size                文件限制大小
+    *       fileType            文件限制类型 mime类型
+    *       success             上传成功处理
+    *       error               上传失败处理
+    *       timeout             超时处理
+    *
+    *   return: status:  0      请选择文件
+    *                    1      超出文件限制大小
+    *                    2      非允许文件格式
+    * */
+    upload:function(url,fileSelector,size,fileType,success,error,timeout){
+        var formdata = new FormData(),fileNode = document.querySelector(fileSelector),fileCount = fileNode.files.length,data={},result ={};
+        //以下为上传文件限制检查
+        if ( fileCount > 0 ){
+            tool.each(Array.prototype.slice.call(fileNode.files),function(value){
+                //检查文件大小
+                if (value.size > size){
+                    result["status"] = 1;
+                    result["errMsg"] = "超出文件限制大小";
+                }else{
+                    //检查文件格式.因为支持formdata，自然支持数组的indexof(h5)
+                    if (fileType.indexOf(value.type)=== -1 ){
+                        result["status"] = 2;
+                        result["errMsg"] = "非允许文件格式";
+                    }else{
+                        formdata.append(value.name,value);
+                    };
+                };
+            });
+        }else{
+            result["status"] = 0;
+            result["errMsg"] = "请选择文件";
+        };
+
+        if (result.status !== undefined)  return result;   //如果有错误信息直接抛出去,结束运行
+
+        var ajaxParam ={
+            type:"post",
+            url:url,
+            data:formdata,
+            isFormData:true,
+            success:success,
+            error:error,
+            timeout:timeout
+        };
+        ajax.common(ajaxParam);
+    }
+
+备注：ajax的上传技术，在es5+之后支持，浏览器的兼容性就是除了IE10以下，大部分都支持了,对于前端处理大文件上传，因为后端切割文件重组还不是很懂，所以暂时没集成。等前后端都打通了，立马集成进来。       
+
+如果想要看文件上传具体内容和测试各种结果，请转到这片博客：![集成ajax上传技术]http://www.cnblogs.com/GerryOfZhong/p/6274536.html
+
 
 ####具体代码已封装成一个js库，供大家根据项目需求，自己开发定制，不过我已经封装了一些常用请求
-  * 异步get请求  --  ajax.get
-  * 异步post请求  --  ajax.post
-  * 同步post请求  --  ajax.postSync
-  * 轮询请求      --  ajax.longPolling
-  * 通用配置请求  --  ajax.common
+  * 异步get请求          --  ajax.get
+  * 异步post请求         --  ajax.post
+  * 同步post请求         --  ajax.postSync
+  * 同步postForm请求     --  ajax.postFormData
+  * 轮询请求             --  ajax.longPolling
+  * 上传文件请求         --  ajax.upload
+  * 通用配置请求         --  ajax.common
 PS：该方法为方便使用，不用的可以直接使用生产版本，只有common方法 
 
-####连续搞了半个月的研究，研究ajax的设计方案，总体说来还是有很大的收获的，对浏览器的了解，js的了解，服务器技术的了解，后端的温习还是有很大的进步的，特别是解决问题的能力，感觉又上了一个level，虽然暂时还没去大公司，还在小公司游荡，但是从没有放弃对技术执着的追求。下一个目标bat，希望可以通过我的努力，进去，再接受一番洗礼。不过到时候有人内推就好了，哎。为了前端架构师的梦想，为了自己的前端架构，继续加油努力下去。技术的未来，不会远...
+####最近在研究原声js的ajax的技术和设计方案，总体说来还是有很大的收获的，对浏览器的了解，js的了解，服务器技术的了解，后端的温习还是有很大的进步的，特别是解决问题的能力，感觉又上了一个level。技术的未来，不会远...
 
 ###版本更新介绍
   1. 跨域不需要在前端设置跨域请求报文头，现已删除   ==>author:keepfool from cnblog
   2. 更新tool一些方法，拥抱es5+新技术				==>author:pod4g from github  
   3. 删除头部参数中的跨域参数设置					==>author:wYhooo from github
-  4. 集成ajax的轮询技术        
-  
+  4. 集成ajax的轮询技术            
+  5. 集成ajax的上传文件技术     
+        a. 增加FormData数据传输方法         
+        b. 新增各种类型判断方法判断类型       
+        c. 更新each方法，判断如果传入参数obj为数组而且浏览器支持es5的新特性直接用数组的forEach方法     
+        
 ####程序员的小笑话
 ![](http://images2015.cnblogs.com/blog/801930/201612/801930-20161210143609882-1515246004.gif)       
   
