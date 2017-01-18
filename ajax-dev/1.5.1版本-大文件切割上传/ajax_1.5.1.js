@@ -415,6 +415,9 @@
                 result["status"] = 0;
                 result["errMsg"] = "请选择文件/只能上传一个文件";
             };
+
+            if (result.status !== undefined)  return result;   //如果有错误信息直接抛出去,结束运行
+
             //判断上传文件是否超过需要切割的大小
             if (file[0].size > cutSize){
                 var fileArr = tool.cutFile(file[0],cutSize);  //切割文件
