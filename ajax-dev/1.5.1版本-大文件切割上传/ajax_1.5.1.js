@@ -112,6 +112,7 @@
                 case "POST":
                     //打开请求
                     xhr.open(ajaxSetting.type.toUpperCase(), ajaxSetting.url, ajaxSetting.async);
+                    xhr.setRequestHeader("Accept","*/*");   //解决火狐浏览器默认要求后台发送xml类型返回值
                     /*
                      *  1、 判断浏览器是否支持level2的属性
                      *       a、 支持。判断用户配置中是否设定使用formdata传输数据
@@ -472,8 +473,7 @@
                 };
                 ajax.common(ajaxParam);
             }
-        },
-
+        }
     };
 
     var outputObj = function(){
