@@ -1,15 +1,15 @@
 /**
  * purpose：     ajax通用解决方案
  * author：      仲强
- * version:      1.5
+ * version:      1.5.1
  * date:         2017-1-10
  * email:        gerry.zhong@outlook.com
- * update:          --1.1 去除跨域请求头部设置   ==> author: keepfool (cnblogs)
- *                  --1.2 更新tool方法，完善结构  ==> author: pod4g  (github)
- *					--1.3 去除参数中的跨域设置，post方法已经支持跨域   ==>author: wYhooo  (github)
- *				    --1.4 集成ajax的轮询技术
- *				    --1.5 集成ajax level2的文件上传 新增tool.is对象，判断数据类型，支持formData数据类型发送
- *
+ * update:          --1.1   去除跨域请求头部设置   ==> author: keepfool (cnblogs)
+ *                  --1.2   更新tool方法，完善结构  ==> author: pod4g  (github)
+ *					--1.3   去除参数中的跨域设置，post方法已经支持跨域   ==>author: wYhooo  (github)
+ *				    --1.4   集成ajax的轮询技术
+ *				    --1.5.0 集成ajax level2的文件上传 新增tool.is对象，判断数据类型，支持formData数据类型发送
+ *                  --1.5.1 集成ajax大文件切割上传，upload_big方法，新增文件切割方法tool.cutFile 返回值为切割好的数组对象
  */
 (function(window){
     var initParam ={
@@ -113,10 +113,11 @@
                     //打开请求
                     xhr.open(ajaxSetting.type.toUpperCase(), ajaxSetting.url, ajaxSetting.async);
                     /*
-                    *  1、 判断浏览器是否支持level2的属性
-                    *       a、 支持。判断用户配置中是否设定使用formdata传输数据
-                    *       b、 不支持。默认使用level1的传统发过誓传输数据
-                    * */
+                     *  1、 判断浏览器是否支持level2的属性
+                     *       a、 支持。判断用户配置中是否设定使用formdata传输数据
+                     *       b、 不支持。默认使用level1的传统发过誓传输数据
+                     * */
+                    that.postParam = undefined;
                     if(!(window.FormData && ajaxSetting.isFormData)){
                         xhr.setRequestHeader("content-type","application/x-www-form-urlencoded");
                         var postParam ="";
@@ -147,6 +148,21 @@
                     return NaN
                 }
             }()
+        },
+        //切割大文件
+        cutFile:function(file,cutSize){
+            var count = file.size / cutSize | 0 ,fileArr = [];
+            for (var i= 0; i< count ; i++){
+                fileArr.push({
+                    name:file.name+".part"+(i+1),
+                    file:file.slice( cutSize * i , cutSize * ( i + 1 ))
+                });
+            };
+            fileArr.push({
+                name:file.name+".part"+(count+1),
+                file:file.slice(cutSize*count,file.size)
+            });
+            return fileArr;
         }
     };
 
@@ -218,11 +234,11 @@
                 ajaxSetting.error();
             };
 
-           if(this.postParam){
-                !!(this.postParam)?(sendData = null):(sendData = this.postParam);
+            if(this.postParam){
+                !!(this.postParam)?(sendData = this.postParam):(sendData = null);
             }else{
-               sendData = ajaxSetting.data;
-           }
+                sendData = ajaxSetting.data;
+            }
 
             //发送请求
             xhr.send(sendData);
@@ -318,19 +334,19 @@
             ajax.common(ajaxParam);
         },
         /*
-        *   ajax上传文件
-        *       url                 文件上传地址
-        *       fileSelector        input=file 选择器
-        *       size                文件限制大小
-        *       fileType            文件限制类型 mime类型
-        *       success             上传成功处理
-        *       error               上传失败处理
-        *       timeout             超时处理
-        *
-        *   return: status:  0      请选择文件
-        *                    1      超出文件限制大小
-        *                    2      非允许文件格式
-        * */
+         *   ajax上传文件 -- level2的新特性，请保证你的项目支持新的特性再使用
+         *       url                 文件上传地址
+         *       fileSelector        input=file 选择器
+         *       size                文件限制大小
+         *       fileType            文件限制类型 mime类型
+         *       success             上传成功处理
+         *       error               上传失败处理
+         *       timeout             超时处理
+         *
+         *   return: status:  0      请选择文件
+         *                    1      超出文件限制大小
+         *                    2      非允许文件格式
+         * */
         upload:function(url,fileSelector,size,fileType,success,error,timeout){
             var formdata = new FormData(),fileNode = document.querySelector(fileSelector),fileCount = fileNode.files.length,data={},result ={};
             //以下为上传文件限制检查
@@ -341,13 +357,15 @@
                         result["status"] = 1;
                         result["errMsg"] = "超出文件限制大小";
                     }else{
-                        //检查文件格式.因为支持formdata，自然支持数组的indexof(h5)
-                        if (fileType.indexOf(value.type)=== -1 ){
-                            result["status"] = 2;
-                            result["errMsg"] = "非允许文件格式";
-                        }else{
-                            formdata.append(value.name,value);
-                        };
+                        if (fileType != "*"){
+                            //检查文件格式.因为支持formdata，自然支持数组的indexof(h5)
+                            if (fileType.indexOf(value.type)=== -1 ){
+                                result["status"] = 2;
+                                result["errMsg"] = "非允许文件格式";
+                            }else{
+                                formdata.append(value.name,value);
+                            };
+                        }
                     };
                 });
             }else{
@@ -368,6 +386,94 @@
             };
             ajax.common(ajaxParam);
         },
+        /*
+         *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用
+         *       url                 文件上传地址
+         *       fileSelector        input=file 选择器
+         *       cutSize             切割文件大小
+         *       fileType            文件限制类型 mime类型
+         *       successEvent        上传成功处理
+         *       progressEvent       上传进度事件
+         *       errorEvent          上传失败处理
+         *       timeoutEvent        超时处理事件
+         *
+         *   return: status:  0      请选择文件
+         *                    1      非允许文件格式
+         * */
+        upload_big:function(url,fileSelector,cutSize,fileType,successEvent,progressEvent,errorEvent,timeoutEvent){
+            var file = document.querySelector(fileSelector).files,result ={};
+            //以下为上传文件限制检查
+            if (file.length === 1){
+                if (fileType != "*"){
+                    if (fileType.indexOf(file.type)=== -1 ){
+                        result["status"] = 1;
+                        result["errMsg"] = "非允许文件格式";
+                    }
+                }
+            }else{
+                result["status"] = 0;
+                result["errMsg"] = "请选择文件/只能上传一个文件";
+            };
+            //判断上传文件是否超过需要切割的大小
+            if (file[0].size > cutSize){
+                var fileArr = tool.cutFile(file[0],cutSize);  //切割文件
+                cutFile_upload(fileArr);
+            }else{
+                return tempObj.upload(url,fileSelector,file[0].size,fileType,successEvent,errorEvent,timeoutEvent);
+            };
+
+            /*
+             *   切割文件上传，配合后台接口进行对接
+             *       传输参数：
+             *           count   -- 当前传输part的次数
+             *           name    -- 做过处理的文件名称
+             *           file    -- 上传的.part的切割文件
+             *           isLast  -- 是否为最后一次切割文件上传（默认值："true"  字符串，只有最后一次才附加）
+             * */
+            function cutFile_upload(fileArr,count){
+                var formData = new FormData();
+                if (count == undefined){
+                    count = 0;
+                    formData.append("count",count);
+                    formData.append("name",fileArr[0].name);
+                    formData.append("file".name,fileArr[0].file);
+                }else{
+                    if (count === fileArr.length-1){
+                        formData.append("isLast","true")
+                    };
+                    formData.append("count",count);
+                    formData.append("name",fileArr[count].name);
+                    formData.append("file".name,fileArr[count].file);
+                };
+                var ajaxParam ={
+                    type:"post",
+                    url:url,
+                    data:formData,
+                    isFormData:true,
+                    success:function(data){
+                        /*
+                         *   data 参数设置  需要后台接口配合
+                         *       建议：如果后台成功保存.part文件，建议返回下次所需要的部分，比如当前发送count为0，则data返回下次为1。
+                         *             如果保存不成功，则可false，或者返回错误信息，可在successEvent中处理
+                         *
+                         * */
+                        progressEvent(count+1,fileArr.length);   //上传进度事件，第一个参数：当前上传次数；第二个参数：总共文件数
+
+                        var currCount = Number(data);
+                        if (currCount){
+                            if (currCount != fileArr.length){
+                                cutFile_upload(fileArr,currCount);
+                            };
+                        };
+                        successEvent(data);  //成功处理事件
+                    },
+                    error:errorEvent,
+                    timeout:timeoutEvent
+                };
+                ajax.common(ajaxParam);
+            }
+        },
+
     };
 
     var outputObj = function(){
