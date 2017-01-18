@@ -215,7 +215,7 @@
   >> 聊天系统会要一直需求轮询，不间断的向后台使用数据，所以isAll = true        
   >> 等待付款业务只需要得到后台一次响应是否支付成功，所以isAll = false        
 
-####1.5版本更新  ---   ajax的上传文件技术
+####1.5.0版本更新  ---   ajax的上传文件技术
     /*
     *   ajax上传文件
     *       url                 文件上传地址
@@ -268,10 +268,102 @@
         ajax.common(ajaxParam);
     }
 
-备注：ajax的上传技术，在es5+之后支持，浏览器的兼容性就是除了IE10以下，大部分都支持了,对于前端处理大文件上传，因为后端切割文件重组还不是很懂，所以暂时没集成。等前后端都打通了，立马集成进来。       
-
 如果想要看文件上传具体内容和测试各种结果，请转到这片博客：http://www.cnblogs.com/GerryOfZhong/p/6274536.html
 
+####1.5.1版本更新  ---   ajax的大文件/超大文件上传技术  （需后台配合）
+        /*
+         *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用
+         *       url                 文件上传地址
+         *       fileSelector        input=file 选择器
+         *       cutSize             切割文件大小
+         *       fileType            文件限制类型 mime类型
+         *       successEvent        上传成功处理
+         *       progressEvent       上传进度事件
+         *       errorEvent          上传失败处理
+         *       timeoutEvent        超时处理事件
+         *
+         *   return: status:  0      请选择文件
+         *                    1      非允许文件格式
+         * */
+        upload_big:function(url,fileSelector,cutSize,fileType,successEvent,progressEvent,errorEvent,timeoutEvent){
+            var file = document.querySelector(fileSelector).files,result ={};
+            //以下为上传文件限制检查
+            if (file.length === 1){
+                if (fileType != "*"){
+                    if (fileType.indexOf(file.type)=== -1 ){
+                        result["status"] = 1;
+                        result["errMsg"] = "非允许文件格式";
+                    }
+                }
+            }else{
+                result["status"] = 0;
+                result["errMsg"] = "请选择文件/只能上传一个文件";
+            };
+            if (result.status !== undefined)  return result;   //如果有错误信息直接抛出去,结束运行
+
+            //判断上传文件是否超过需要切割的大小
+            if (file[0].size > cutSize){
+                var fileArr = tool.cutFile(file[0],cutSize);  //切割文件
+                cutFile_upload(fileArr);
+            }else{
+                return tempObj.upload(url,fileSelector,file[0].size,fileType,successEvent,errorEvent,timeoutEvent);
+            };
+
+            /*
+            *   切割文件上传，配合后台接口进行对接
+            *       传输参数：
+            *           count   -- 当前传输part的次数
+            *           name    -- 做过处理的文件名称
+            *           file    -- 上传的.part的切割文件
+            *           isLast  -- 是否为最后一次切割文件上传（默认值："true"  字符串，只有最后一次才附加）
+            * */
+            function cutFile_upload(fileArr,count){
+                var formData = new FormData();
+                if (count == undefined){
+                    count = 0;
+                    formData.append("count",count);
+                    formData.append("name",fileArr[0].name);
+                    formData.append("file".name,fileArr[0].file);
+                }else{
+                    if (count === fileArr.length-1){
+                        formData.append("isLast","true")
+                    };
+                    formData.append("count",count);
+                    formData.append("name",fileArr[count].name);
+                    formData.append("file".name,fileArr[count].file);
+                };
+                var ajaxParam ={
+                    type:"post",
+                    url:url,
+                    data:formData,
+                    isFormData:true,
+                    success:function(data){
+                        /*
+                        *   data 参数设置  需要后台接口配合
+                        *       建议：如果后台成功保存.part文件，建议返回下次所需要的部分，比如当前发送count为0，则data返回下次为1。
+                        *             如果保存不成功，则可false，或者返回错误信息，可在successEvent中处理
+                        *
+                        * */
+                        progressEvent(count+1,fileArr.length);   //上传进度事件，第一个参数：当前上传次数；第二个参数：总共文件数
+
+                        var currCount = Number(data);
+                        if (currCount){
+                            if (currCount != fileArr.length){
+                                cutFile_upload(fileArr,currCount);
+                            };
+                        };
+                        successEvent(data);  //成功处理事件
+                    },
+                    error:errorEvent,
+                    timeout:timeoutEvent
+                };
+                ajax.common(ajaxParam);
+            }
+        }
+
+如果想要看文件上传具体内容和测试各种结果，请转到这片博客：http://www.cnblogs.com/GerryOfZhong/p/6295211.html
+
+备注：ajax的上传技术，在es5+之后支持，浏览器的兼容性就是除了IE10以下，大部分都支持了       
 
 ####具体代码已封装成一个js库，供大家根据项目需求，自己开发定制，不过我已经封装了一些常用请求
   * 异步get请求          --  ajax.get
@@ -280,8 +372,8 @@
   * 同步postForm请求     --  ajax.postFormData
   * 轮询请求             --  ajax.longPolling
   * 上传文件请求         --  ajax.upload
+  * 大文件切割上传请求   --  ajax.upload_big
   * 通用配置请求         --  ajax.common
-PS：该方法为方便使用，不用的可以直接使用生产版本，只有common方法 
 
 ####最近在研究原声js的ajax的技术和设计方案，总体说来还是有很大的收获的，对浏览器的了解，js的了解，服务器技术的了解，后端的温习还是有很大的进步的，特别是解决问题的能力，感觉又上了一个level。技术的未来，不会远...
 
