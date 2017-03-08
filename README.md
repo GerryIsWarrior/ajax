@@ -40,6 +40,9 @@
   5. 服务器回调，客户端接收，并做响应处理
   
 ####关键代码
+    //每次清空请求缓存,并重新合并对象
+    var ajaxSetting = {},sendData=null;tool.MergeObject(ajaxSetting,initParam);tool.MergeObject(ajaxSetting,options);
+
     //创建xhr对象
     var xhr = tool.createXhrObject();
 
@@ -50,10 +53,10 @@
     xhr.onload===undefined?(xhr.xhr_ie8=true):(xhr.xhr_ie8=false);
 
     //参数处理（get和post）,包括xhr.open     get:拼接好url再open   post:先open，再设置其他参数
-    ajaxSetting.data === ""?(null):(xhr = tool.dealWithParam(ajaxSetting,this,xhr));
+    ajaxSetting.data === ""?(xhr.open(ajaxSetting.type.toUpperCase(), ajaxSetting.url, ajaxSetting.async)):(xhr = tool.dealWithParam(ajaxSetting,this,xhr));
 
     //设置超时时间（只有异步请求才有超时时间）
-    ajaxSetting.async?(xhr.timeout = ajaxSetting.time):(null);
+    ajaxSetting.async?(xhr.timeoutEvent = ajaxSetting.timeout):(null);
 
     //设置http协议的头部
     tool.each(ajaxSetting.requestHeader,function(item,index){xhr.setRequestHeader(index,item)});
@@ -61,14 +64,14 @@
     //onload事件（IE8下没有该事件）
     xhr.onload = function(e) {
         if(this.status == 200||this.status == 304){
-            ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.success(JSON.parse(xhr.responseText))):(ajaxSetting.success(xhr.responseText));
+            ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.successEvent(JSON.parse(xhr.responseText))):(ajaxSetting.successEvent(xhr.responseText));
         }else{
             /*
              *  这边为了兼容IE8、9的问题，以及请求完成而造成的其他错误，比如404等
              *   如果跨域请求在IE8、9下跨域失败不走onerror方法
              *       其他支持了Level 2 的版本 直接走onerror
              * */
-            ajaxSetting.error(e.currentTarget.status, e.currentTarget.statusText);
+            ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
         }
     };
 
@@ -86,24 +89,30 @@
                 break;
             case 4://完成
                 //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
-                xhr.xhr_ie8?((xhr.status == 200 || xhr.status == 304)?(ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.success(JSON.parse(xhr.responseText))):(ajaxSetting.success(xhr.responseText))):(null)):(null);
+                xhr.xhr_ie8?((xhr.status == 200 || xhr.status == 304)?(ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.successEvent(JSON.parse(xhr.responseText))):(ajaxSetting.successEvent(xhr.responseText))):(null)):(null);
                 break;
         };
     };
 
     //ontimeout超时事件
     xhr.ontimeout = function(e){
-        ajaxSetting.timeout(999,e?(e.type):("timeout"));   //IE8 没有e参数
+        ajaxSetting.timeoutEvent(999,e?(e.type):("timeoutEvent"));   //IE8 没有e参数
         xhr.abort();  //关闭请求
     };
 
     //错误事件，直接ajax失败，而不走onload事件
     xhr.onerror = function(e){
-        ajaxSetting.error();
+        ajaxSetting.errorEvent();
     };
 
+    if(this.postParam){
+        (this.postParam)?(sendData = this.postParam):(sendData = null);
+    }else{
+        sendData = ajaxSetting.data;
+    }
+
     //发送请求
-    xhr.send((function(result){result == undefined?(result =null):(null);return result;})(this.postParam));
+    xhr.send(sendData);
             
 ###测试代码
 ####前端同源测试代码
@@ -171,66 +180,61 @@
 
 ####1.4 版本更新  ---   轮询技术的实现（需要后台接口支持）
     /*
-    * 长轮询的实现
-    *   a. 业务上只需要得到服务器一次响应的轮询
-    *   b. 业务上需要无限次得到服务器响应的轮询
-    *
-    *   param: url   请求接口地址
-    *          data  请求参数
-    *          successEvent    成功事件处理
-    *          isAll           是否一直请求（例如，等待付款完成业务，只需要请求一次）
-    *          timeout         ajax超时时间
-    *          timeFrequency   每隔多少时间发送一次请求
-    *          error           错误事件
-    *          timeout         超时处理
-    * */
-    longPolling:function(url,data,successEvent,isAll,timeout,timeFrequency,errorEvent,timeoutEvent){
-       var ajaxParam ={
-           time:timeout,
-           type:"post",
-           url:url,
-           data:data,
-           async:false,
-           success:function(date){
-               successEvent(data);
-               var timer = setTimeout(
-                   function(){
-                       tempObj.longPolling(url,data,successEvent,isAll,error,timeoutEvent);
-                   },timeFrequency);
-               //业务需求判断，是否只需要得到一次结果
-               if (!isAll) clearTimeout(timer);
-           },
-           //如果走了error说明该接口有问题，没必要继续下去了
-           error:errorEvent,
-           timeout:function(){
-               timeoutEvent();
-               setTimeout(function(){
-                   tempObj.longPolling(url,data,successEvent,isAll,error,timeoutEvent)
-               },timeFrequency);
-           }
-       };
-       ajax.common(ajaxParam);
-    }
-> 考虑到业务需求，集成了一次isAll参数有2个意义
+     * 长轮询的实现
+     *   param: type  请求类型
+     *          url   请求接口地址
+     *          data  请求参数
+     *          successEvent(data,this)     成功事件处理  如果得到正确数据，则让轮询停止，则在第二个回调参数设置stop属性就好
+     *          timeFrequency               每隔多少时间发送一次请求
+     *          errorEvent                  错误事件
+     *          timeoutEvent                超时处理
+     * */
+    longPolling:function(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent){
+        var ajaxParam ={
+            type:type,
+            url:url,
+            data:data,
+            async:true,
+            isFormData:false,
+            successEvent:function(dateCall){
+                successEvent(dateCall,this);
+                if (!this.stop){
+                    setTimeout(function(){
+                        tempObj.longPolling(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent);
+                    },timeFrequency);
+                };
+            },
+            //如果走了error说明该接口有问题，没必要继续下去了
+            errorEvent:errorEvent,
+            timeoutEvent:function(){
+                timeoutEvent();
+                setTimeout(function(){
+                    tempObj.longPolling(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent)
+                },timeFrequency);
+            }
+        };
+        ajax.common(ajaxParam);
+    },
+> 考虑到业务需求
   >> 聊天系统会要一直需求轮询，不间断的向后台使用数据，所以isAll = true        
-  >> 等待付款业务只需要得到后台一次响应是否支付成功，所以isAll = false        
+  >> 等待付款业务只需要得到后台一次响应是否支付成功，所以使用回调参数中的第二个参数的stop属性，结束轮询        
 
 ####1.5.0版本更新  ---   ajax的上传文件技术
     /*
-    *   ajax上传文件
-    *       url                 文件上传地址
-    *       fileSelector        input=file 选择器
-    *       size                文件限制大小
-    *       fileType            文件限制类型 mime类型
-    *       success             上传成功处理
-    *       error               上传失败处理
-    *       timeout             超时处理
-    *
-    *   return: status:  0      请选择文件
-    *                    1      超出文件限制大小
-    *                    2      非允许文件格式
-    * */
-    upload:function(url,fileSelector,size,fileType,success,error,timeout){
+     *   ajax上传文件 -- level2的新特性，请保证你的项目支持新的特性再使用
+     *       url                 文件上传地址
+     *       fileSelector        input=file 选择器
+     *       size                文件限制大小
+     *       fileType            文件限制类型 mime类型
+     *       successEvent             上传成功处理
+     *       errorEvent               上传失败处理
+     *       timeoutEvent             超时处理
+     *
+     *   return: status:  0      请选择文件
+     *                    1      超出文件限制大小
+     *                    2      非允许文件格式
+     * */
+    upload:function(url,fileSelector,size,fileType,successEvent,errorEvent,timeoutEvent){
         var formdata = new FormData(),fileNode = document.querySelector(fileSelector),fileCount = fileNode.files.length,data={},result ={};
         //以下为上传文件限制检查
         if ( fileCount > 0 ){
@@ -240,13 +244,17 @@
                     result["status"] = 1;
                     result["errMsg"] = "超出文件限制大小";
                 }else{
-                    //检查文件格式.因为支持formdata，自然支持数组的indexof(h5)
-                    if (fileType.indexOf(value.type)=== -1 ){
-                        result["status"] = 2;
-                        result["errMsg"] = "非允许文件格式";
+                    if (fileType != "*"){
+                        //检查文件格式.因为支持formdata，自然支持数组的indexof(h5)
+                        if (fileType.indexOf(value.type)=== -1 ){
+                            result["status"] = 2;
+                            result["errMsg"] = "非允许文件格式";
+                        }else{
+                            formdata.append(value.name,value);
+                        };
                     }else{
                         formdata.append(value.name,value);
-                    };
+                    }
                 };
             });
         }else{
@@ -261,111 +269,112 @@
             url:url,
             data:formdata,
             isFormData:true,
-            success:success,
-            error:error,
-            timeout:timeout
+            successEvent:successEvent,
+            errorEvent:errorEvent,
+            timeoutEvent:timeoutEvent
         };
         ajax.common(ajaxParam);
-    }
+    },
 
 如果想要看文件上传具体内容和测试各种结果，请转到这片博客：http://www.cnblogs.com/GerryOfZhong/p/6274536.html
 
 ####1.5.1版本更新  ---   ajax的大文件/超大文件上传技术  （需后台配合）
-        /*
-         *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用
-         *       url                 文件上传地址
-         *       fileSelector        input=file 选择器
-         *       cutSize             切割文件大小
-         *       fileType            文件限制类型 mime类型
-         *       successEvent        上传成功处理
-         *       progressEvent       上传进度事件
-         *       errorEvent          上传失败处理
-         *       timeoutEvent        超时处理事件
-         *
-         *   return: status:  0      请选择文件
-         *                    1      非允许文件格式
-         * */
-        upload_big:function(url,fileSelector,cutSize,fileType,successEvent,progressEvent,errorEvent,timeoutEvent){
-            var file = document.querySelector(fileSelector).files,result ={};
-            //以下为上传文件限制检查
-            if (file.length === 1){
-                if (fileType != "*"){
-                    if (fileType.indexOf(file.type)=== -1 ){
-                        result["status"] = 1;
-                        result["errMsg"] = "非允许文件格式";
-                    }
+    /*
+     *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用
+     *       url                 文件上传地址
+     *       fileSelector        input=file 选择器
+     *       cutSize             切割文件大小
+     *       fileType            文件限制类型 mime类型
+     *       successEvent        上传成功处理
+     *       progressEvent       上传进度事件
+     *       errorEvent          上传失败处理
+     *       timeoutEvent        超时处理事件
+     *
+     *   return: status:  0      请选择文件
+     *                    1      非允许文件格式
+     * */
+    upload_big:function(url,fileSelector,cutSize,fileType,successEvent,progressEvent,errorEvent,timeoutEvent){
+        var file = document.querySelector(fileSelector).files,result ={};
+        //以下为上传文件限制检查
+        if (file.length === 1){
+            if (fileType != "*"){
+                if (fileType.indexOf(file.type)=== -1 ){
+                    result["status"] = 1;
+                    result["errMsg"] = "非允许文件格式";
                 }
-            }else{
-                result["status"] = 0;
-                result["errMsg"] = "请选择文件/只能上传一个文件";
-            };
-            if (result.status !== undefined)  return result;   //如果有错误信息直接抛出去,结束运行
-
-            //判断上传文件是否超过需要切割的大小
-            if (file[0].size > cutSize){
-                var fileArr = tool.cutFile(file[0],cutSize);  //切割文件
-                cutFile_upload(fileArr);
-            }else{
-                return tempObj.upload(url,fileSelector,file[0].size,fileType,successEvent,errorEvent,timeoutEvent);
-            };
-
-            /*
-            *   切割文件上传，配合后台接口进行对接
-            *       传输参数：
-            *           count   -- 当前传输part的次数
-            *           name    -- 做过处理的文件名称
-            *           file    -- 上传的.part的切割文件
-            *           isLast  -- 是否为最后一次切割文件上传（默认值："true"  字符串，只有最后一次才附加）
-            * */
-            function cutFile_upload(fileArr,count){
-                var formData = new FormData();
-                if (count == undefined){
-                    count = 0;
-                    formData.append("count",count);
-                    formData.append("name",fileArr[0].name);
-                    formData.append("file".name,fileArr[0].file);
-                }else{
-                    if (count === fileArr.length-1){
-                        formData.append("isLast","true")
-                    };
-                    formData.append("count",count);
-                    formData.append("name",fileArr[count].name);
-                    formData.append("file".name,fileArr[count].file);
-                };
-                var ajaxParam ={
-                    type:"post",
-                    url:url,
-                    data:formData,
-                    isFormData:true,
-                    success:function(data){
-                        /*
-                        *   data 参数设置  需要后台接口配合
-                        *       建议：如果后台成功保存.part文件，建议返回下次所需要的部分，比如当前发送count为0，则data返回下次为1。
-                        *             如果保存不成功，则可false，或者返回错误信息，可在successEvent中处理
-                        *
-                        * */
-                        progressEvent(count+1,fileArr.length);   //上传进度事件，第一个参数：当前上传次数；第二个参数：总共文件数
-
-                        var currCount = Number(data);
-                        if (currCount){
-                            if (currCount != fileArr.length){
-                                cutFile_upload(fileArr,currCount);
-                            };
-                        };
-                        successEvent(data);  //成功处理事件
-                    },
-                    error:errorEvent,
-                    timeout:timeoutEvent
-                };
-                ajax.common(ajaxParam);
             }
+        }else{
+            result["status"] = 0;
+            result["errMsg"] = "请选择文件/只能上传一个文件";
+        };
+
+        if (result.status !== undefined)  return result;   //如果有错误信息直接抛出去,结束运行
+
+        //判断上传文件是否超过需要切割的大小
+        if (file[0].size > cutSize){
+            var fileArr = tool.cutFile(file[0],cutSize);  //切割文件
+            cutFile_upload(fileArr);
+        }else{
+            return tempObj.upload(url,fileSelector,file[0].size,fileType,successEvent,errorEvent,timeoutEvent);
+        };
+
+        /*
+         *   切割文件上传，配合后台接口进行对接
+         *       传输参数：
+         *           count   -- 当前传输part的次数
+         *           name    -- 做过处理的文件名称
+         *           file    -- 上传的.part的切割文件
+         *           isLast  -- 是否为最后一次切割文件上传（默认值："true"  字符串，只有最后一次才附加）
+         * */
+        function cutFile_upload(fileArr,count){
+            var formData = new FormData();
+            if (count == undefined){
+                count = 0;
+                formData.append("count",count);
+                formData.append("name",fileArr[0].name);
+                formData.append("file".name,fileArr[0].file);
+            }else{
+                if (count === fileArr.length-1){
+                    formData.append("isLast","true")
+                };
+                formData.append("count",count);
+                formData.append("name",fileArr[count].name);
+                formData.append("file".name,fileArr[count].file);
+            };
+            var ajaxParam ={
+                type:"post",
+                url:url,
+                data:formData,
+                isFormData:true,
+                successEvent:function(data){
+                    /*
+                     *   data 参数设置  需要后台接口配合
+                     *       建议：如果后台成功保存.part文件，建议返回下次所需要的部分，比如当前发送count为0，则data返回下次为1。
+                     *             如果保存不成功，则可false，或者返回错误信息，可在successEvent中处理
+                     *
+                     * */
+                    progressEvent(count+1,fileArr.length);   //上传进度事件，第一个参数：当前上传次数；第二个参数：总共文件数
+
+                    var currCount = Number(data);
+                    if (currCount){
+                        if (currCount != fileArr.length){
+                            cutFile_upload(fileArr,currCount);
+                        };
+                    };
+                    successEvent(data);  //成功处理事件
+                },
+                errorEvent:errorEvent,
+                timeoutEvent:timeoutEvent
+            };
+            ajax.common(ajaxParam);
         }
+    }
 
 如果想要看文件上传具体内容和测试各种结果，请转到这片博客：http://www.cnblogs.com/GerryOfZhong/p/6295211.html
 
 备注：ajax的上传技术，在es5+之后支持，浏览器的兼容性就是除了IE10以下，大部分都支持了       
 
-####具体代码已封装成一个js库，供大家根据项目需求，自己开发定制，不过我已经封装了一些常用请求
+####具体代码已封装成一个js库，下面为API库
   * 异步get请求          --  ajax.get
   * 异步post请求         --  ajax.post
   * 同步post请求         --  ajax.postSync
@@ -386,6 +395,7 @@
         a. 增加FormData数据传输方法         
         b. 新增各种类型判断方法判断类型       
         c. 更新each方法，判断如果传入参数obj为数组而且浏览器支持es5的新特性直接用数组的forEach方法     
+  5. 更新bug，更细ajax默认值相互影响问题，调试ajax长轮询bug         
         
 ####程序员的小笑话
 ![](http://images2015.cnblogs.com/blog/801930/201612/801930-20161210143609882-1515246004.gif)       

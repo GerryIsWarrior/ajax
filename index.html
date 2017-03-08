@@ -2,34 +2,73 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ajax设计方案测试</title>
+    <title>test page</title>
 </head>
 <body>
-<!--大家可以自己做一些测试，如果有一些建议，希望大家可以一起研究研究-->
+select file:<input type="file" id="file1" accept="*"/><br />
+<input type="button" id="upload" value="upload" />
+
 </body>
 </html>
-<script type="text/javascript" src="ajax-dev/1.3版本-核心请求/ajax-1.3.min.js"></script>
+<script type="text/javascript" src="ajax-dev/ajax.1.5.2.min.js"></script>
 <script>
-        +(function(){
-			var ajaxParam ={
+    +(function(){
+        var url ="api/ajax/postReq/";
+        var data ={"name":"gerry","age":"888"};
+        var formData = new FormData();
+        formData.append("name","zq");
+        formData.append("age","11");
+
+        //test common
+        var ajaxParam ={
             type:"post",
-            url:"http://zhong123893.oicp.net/api/weixin/ajaxT2/",
-//            url:"/api/ajax1/ajaxT1/",
-            data:{"name":"gerry","age":"0000"},
-            success:function(data){
-                //document.body.innerHTML =data;
-                alert(data);
+            url:url,
+            data:data,
+            successEvent:function(comData){
+                console.log(comData);
             },
-            error:function(x,xx,xxx){
-                document.body.innerHTML =xx;
+            errorEvent:function(x,xx,xxx){
+                alert(x)
             },
-            timeout:function(x,xx,xxx){
+            timeoutEvent:function(x,xx,xxx){
                 document.body.innerHTML =xx;
             }
         };
-//        ajax.common(ajaxParam);
-        ajax.post("zhong123893.oicp.net/api/weixin/ajaxT2/",{"name":"测试异步post请求","age":"success"},function(data){alert(data)});
-//        ajax.get("/api/ajax1/ajaxT2/",{"name":"测试异步get请求","age":"success"},function(data){alert(data)});
-//        ajax.postSync("/api/ajax1/ajaxT1/",{"name":"测试同步post请求","age":"success"},function(data){alert(data)});
-        })()
+        ajax.common(ajaxParam);
+
+        //test get
+        ajax.get("api/ajax/getReq/",data,function(getData){
+            console.log(getData);
+        });
+
+        //test post
+        ajax.post("api/ajax/postReq/",data,function(getData){
+            console.log(getData);
+        });
+
+        //test postSync
+        ajax.postSync("api/ajax/postReq/",data,function(getData){
+            console.log(getData);
+        });
+
+        //test postFormData
+        ajax.postFormData("api/ajax/formReq/",formData,function(getData){
+            console.log(getData);
+        });
+
+        //test longPolling
+        ajax.longPolling("post","api/ajax/postReq/",data,function(getData1,that){
+            //you can use 'that.stop=true' to stop  polling
+            console.log(getData1);
+        },4000);
+
+        //test uploadFile
+        document.querySelector("#upload").onclick = function () {
+            //one file
+//            var temp = ajax.upload("/api/ajaxUpload/upload3/","#file1",1024*1024*1024,["image/jpeg"],function(x){ console.log(x)})
+            //big file
+            var temp = ajax.upload_big("/api/ajaxUpload/upload5/","#file1",1024*1024,"*",function(x){ },function(x,xx){console.log(x+"/"+xx)})
+            console.log(temp);
+        };
+    })();
 </script>

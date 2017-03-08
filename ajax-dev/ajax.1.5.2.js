@@ -1,7 +1,7 @@
 /**
  * purpose：     ajax通用解决方案
  * author：      仲强
- * version:      1.5.1
+ * version:      1.5.2
  * date:         2017-1-10
  * email:        gerry.zhong@outlook.com
  * update:          --1.1   去除跨域请求头部设置   ==> author: keepfool (cnblogs)
@@ -10,22 +10,22 @@
  *				    --1.4   集成ajax的轮询技术
  *				    --1.5.0 集成ajax level2的文件上传 新增tool.is对象，判断数据类型，支持formData数据类型发送
  *                  --1.5.1 集成ajax大文件切割上传，upload_big方法，新增文件切割方法tool.cutFile 返回值为切割好的数组对象
+ *                  --1.5.2 更新bug，更细ajax默认值相互影响问题，调试ajax长轮询bug
  */
 (function(window){
     var initParam ={
-        time:0,                                 //超时时间（单位：毫秒）
-        type:"",                                //请求类型（get、post...）
-        url:"",                                 //请求接口
-        data:"",                                //请求参数（格式：json对象）  例子：{"name":"gerry","age":"88"}
-        async:true,                             //同|异步请求 （异步：true 同步：false）
-        dataType:'',                            //返回值处理（可拓展）   目前只实现：JSON
-        isFormData:'',                          //是否为formData传输方式  ajax-level2方案  PS：因为使用formData数据传输，后台接口需要变化，数据取值将要在request的form对象中取值
-        success:function(data){},              //请求成功处理事件
-        error:function(x,xx,xxx){},            //请求失败处理事件
-        timeout:function(){},                  //请求超时处理事件
-        requestHeader:{}                        //报文头设置（可自定义报文头）
+        timeout:0,                                  //超时时间（单位：毫秒）
+        type:"",                                    //请求类型（get、post...）
+        url:"",                                     //请求接口
+        data:"",                                    //请求参数（格式：json对象）  例子：{"name":"gerry","age":"88"}
+        async:true,                                 //同|异步请求 （异步：true 同步：false）
+        dataType:'',                                //返回值处理（可拓展）   目前只实现：JSON
+        isFormData:false,                              //是否为formData传输方式  ajax-level2方案  PS：因为使用formData数据传输，后台接口需要变化，数据取值将要在request的form对象中取值
+        successEvent:function(data){},             //请求成功处理事件
+        errorEvent:function(x,xx,xxx){},           //请求失败处理事件
+        timeoutEvent:function(){},                 //请求超时处理事件
+        requestHeader:{}                            //报文头设置（可自定义报文头）
     };
-
     var tool = {
         hasOwn: function(obj, key){
             return Object.prototype.hasOwnProperty.call(obj, key)
@@ -170,8 +170,8 @@
     var tempObj ={
         //通用ajax
         common:function(options){
-            //合并参数对象
-            var ajaxSetting = tool.MergeObject(initParam,options),sendData=null;
+            //每次清空请求缓存,并重新合并对象
+            var ajaxSetting = {},sendData=null;tool.MergeObject(ajaxSetting,initParam);tool.MergeObject(ajaxSetting,options);
 
             //创建xhr对象
             var xhr = tool.createXhrObject();
@@ -186,7 +186,7 @@
             ajaxSetting.data === ""?(xhr.open(ajaxSetting.type.toUpperCase(), ajaxSetting.url, ajaxSetting.async)):(xhr = tool.dealWithParam(ajaxSetting,this,xhr));
 
             //设置超时时间（只有异步请求才有超时时间）
-            ajaxSetting.async?(xhr.timeout = ajaxSetting.time):(null);
+            ajaxSetting.async?(xhr.timeoutEvent = ajaxSetting.timeout):(null);
 
             //设置http协议的头部
             tool.each(ajaxSetting.requestHeader,function(item,index){xhr.setRequestHeader(index,item)});
@@ -194,14 +194,14 @@
             //onload事件（IE8下没有该事件）
             xhr.onload = function(e) {
                 if(this.status == 200||this.status == 304){
-                    ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.success(JSON.parse(xhr.responseText))):(ajaxSetting.success(xhr.responseText));
+                    ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.successEvent(JSON.parse(xhr.responseText))):(ajaxSetting.successEvent(xhr.responseText));
                 }else{
                     /*
                      *  这边为了兼容IE8、9的问题，以及请求完成而造成的其他错误，比如404等
                      *   如果跨域请求在IE8、9下跨域失败不走onerror方法
                      *       其他支持了Level 2 的版本 直接走onerror
                      * */
-                    ajaxSetting.error(e.currentTarget.status, e.currentTarget.statusText);
+                    ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
                 }
             };
 
@@ -219,24 +219,24 @@
                         break;
                     case 4://完成
                         //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
-                        xhr.xhr_ie8?((xhr.status == 200 || xhr.status == 304)?(ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.success(JSON.parse(xhr.responseText))):(ajaxSetting.success(xhr.responseText))):(null)):(null);
+                        xhr.xhr_ie8?((xhr.status == 200 || xhr.status == 304)?(ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.successEvent(JSON.parse(xhr.responseText))):(ajaxSetting.successEvent(xhr.responseText))):(null)):(null);
                         break;
                 };
             };
 
             //ontimeout超时事件
             xhr.ontimeout = function(e){
-                ajaxSetting.timeout(999,e?(e.type):("timeout"));   //IE8 没有e参数
+                ajaxSetting.timeoutEvent(999,e?(e.type):("timeoutEvent"));   //IE8 没有e参数
                 xhr.abort();  //关闭请求
             };
 
             //错误事件，直接ajax失败，而不走onload事件
             xhr.onerror = function(e){
-                ajaxSetting.error();
+                ajaxSetting.errorEvent();
             };
 
             if(this.postParam){
-                !!(this.postParam)?(sendData = this.postParam):(sendData = null);
+                (this.postParam)?(sendData = this.postParam):(sendData = null);
             }else{
                 sendData = ajaxSetting.data;
             }
@@ -245,90 +245,92 @@
             xhr.send(sendData);
         },
         //异步get请求
-        get:function(url,data,success,error,timeout){
+        get:function(url,data,successEvent,errorEvent,timeoutEvent){
             var ajaxParam ={
                 type:"get",
                 url:url,
                 data:data,
-                success:success,
-                error:error,
-                timeout:timeout
+                async:true,
+                isFormData:false,
+                successEvent:successEvent,
+                errorEvent:errorEvent,
+                timeoutEvent:timeoutEvent
             };
             ajax.common(ajaxParam);
         },
         //异步post请求
-        post:function(url,data,success,error,timeout){
+        post:function(url,data,successEvent,errorEvent,timeoutEvent){
             var ajaxParam ={
                 type:"post",
                 url:url,
                 data:data,
-                success:success,
-                error:error,
-                timeout:timeout
+                async:true,
+                isFormData:false,
+                successEvent:successEvent,
+                errorEvent:errorEvent,
+                timeoutEvent:timeoutEvent
             };
             ajax.common(ajaxParam);
         },
         //异步post请求
-        postFormData:function(url,formData,success,error,timeout){
+        postFormData:function(url,formData,successEvent,errorEvent,timeoutEvent){
             var ajaxParam ={
                 type:"post",
                 url:url,
                 data:formData,
+                async:true,
                 isFormData:true,
-                success:success,
-                error:error,
-                timeout:timeout
+                successEvent:successEvent,
+                errorEvent:errorEvent,
+                timeoutEvent:timeoutEvent
             };
             ajax.common(ajaxParam);
         },
         //同步post请求
-        postSync:function(url,data,success,error,timeout){
+        postSync:function(url,data,successEvent,errorEvent,timeoutEvent){
             var ajaxParam ={
                 type:"post",
                 url:url,
                 data:data,
                 async:false,
-                success:success,
-                error:error,
-                timeout:timeout
+                isFormData:false,
+                successEvent:successEvent,
+                errorEvent:errorEvent,
+                timeoutEvent:timeoutEvent
             };
             ajax.common(ajaxParam);
         },
         /*
          * 长轮询的实现
-         *   a. 业务上只需要得到服务器一次响应的轮询
-         *   b. 业务上需要无限次得到服务器响应的轮询
-         *
-         *   param: url   请求接口地址
+         *   param: type  请求类型
+         *          url   请求接口地址
          *          data  请求参数
-         *          successEvent    成功事件处理
-         *          isAll           是否一直请求（例如，等待付款完成业务，只需要请求一次）
-         *          timeout         ajax超时时间
-         *          timeFrequency   每隔多少时间发送一次请求
-         *          error           错误事件
-         *          timeout         超时处理
+         *          successEvent(data,this)     成功事件处理  如果得到正确数据，则让轮询停止，则在第二个回调参数设置stop属性就好
+         *          timeFrequency               每隔多少时间发送一次请求
+         *          errorEvent                  错误事件
+         *          timeoutEvent                超时处理
          * */
-        longPolling:function(url,data,successEvent,isAll,timeout,timeFrequency,errorEvent,timeoutEvent){
+        longPolling:function(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent){
             var ajaxParam ={
-                time:timeout,
-                type:"post",
+                type:type,
                 url:url,
                 data:data,
-                async:false,
-                success:function(date){
-                    successEvent(data);
-                    var timer = setTimeout(function(){
-                        tempObj.longPolling(url,data,successEvent,isAll,errorEvent,timeoutEvent);
-                    },timeFrequency);
-                    //业务需求判断，是否只需要得到一次结果
-                    if (!isAll) clearTimeout(timer);
+                async:true,
+                isFormData:false,
+                successEvent:function(dateCall){
+                    successEvent(dateCall,this);
+                    if (!this.stop){
+                        setTimeout(function(){
+                            tempObj.longPolling(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent);
+                        },timeFrequency);
+                    };
                 },
                 //如果走了error说明该接口有问题，没必要继续下去了
-                error:errorEvent,
-                timeout:function(){
+                errorEvent:errorEvent,
+                timeoutEvent:function(){
                     timeoutEvent();
                     setTimeout(function(){
-                        tempObj.longPolling(url,data,successEvent,isAll,errorEvent,timeoutEvent)
+                        tempObj.longPolling(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent)
                     },timeFrequency);
                 }
             };
@@ -340,15 +342,15 @@
          *       fileSelector        input=file 选择器
          *       size                文件限制大小
          *       fileType            文件限制类型 mime类型
-         *       success             上传成功处理
-         *       error               上传失败处理
-         *       timeout             超时处理
+         *       successEvent             上传成功处理
+         *       errorEvent               上传失败处理
+         *       timeoutEvent             超时处理
          *
          *   return: status:  0      请选择文件
          *                    1      超出文件限制大小
          *                    2      非允许文件格式
          * */
-        upload:function(url,fileSelector,size,fileType,success,error,timeout){
+        upload:function(url,fileSelector,size,fileType,successEvent,errorEvent,timeoutEvent){
             var formdata = new FormData(),fileNode = document.querySelector(fileSelector),fileCount = fileNode.files.length,data={},result ={};
             //以下为上传文件限制检查
             if ( fileCount > 0 ){
@@ -366,6 +368,8 @@
                             }else{
                                 formdata.append(value.name,value);
                             };
+                        }else{
+                            formdata.append(value.name,value);
                         }
                     };
                 });
@@ -381,9 +385,9 @@
                 url:url,
                 data:formdata,
                 isFormData:true,
-                success:success,
-                error:error,
-                timeout:timeout
+                successEvent:successEvent,
+                errorEvent:errorEvent,
+                timeoutEvent:timeoutEvent
             };
             ajax.common(ajaxParam);
         },
@@ -454,7 +458,7 @@
                     url:url,
                     data:formData,
                     isFormData:true,
-                    success:function(data){
+                    successEvent:function(data){
                         /*
                          *   data 参数设置  需要后台接口配合
                          *       建议：如果后台成功保存.part文件，建议返回下次所需要的部分，比如当前发送count为0，则data返回下次为1。
@@ -471,8 +475,8 @@
                         };
                         successEvent(data);  //成功处理事件
                     },
-                    error:errorEvent,
-                    timeout:timeoutEvent
+                    errorEvent:errorEvent,
+                    timeoutEvent:timeoutEvent
                 };
                 ajax.common(ajaxParam);
             }
