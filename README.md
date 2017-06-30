@@ -24,7 +24,7 @@
     4. 发送和获取数据时，可以获取进度信息；   
     5. 可以设置请求的超时时间；   
     
-####开始准备
+#### 开始准备
   * 纯前端代码
   * nginx反向代理服务器（前后端分离用）
   * 后台2套接口（端口：1122，端口：2211）  PS：一份必须支持跨域请求
@@ -32,14 +32,14 @@
   * chrome插件postman（接口测试）
   * IE、chrome、firefox、Opera、safari、edge 6大浏览器，做兼容性测试
   
-###XMLHttpRequest发送请求步骤
+### XMLHttpRequest发送请求步骤
   1. 实例化XMLHttpRequest对象（IE8-9是微软封装的ActiveXObject('Microsoft.XMLHTTP')）获得一个实例
   2. 通过实例open一个请求，设置发送类型和接口以及同异步
   3. 如有需要配置报文，以及各种事件（success，error，timeout等）
   4. 调用实例的send方法，发送http/https的请求
   5. 服务器回调，客户端接收，并做响应处理
   
-####关键代码
+#### 关键代码
             //每次清空请求缓存,并重新合并对象
             var ajaxSetting = {},sendData=null;tool.MergeObject(ajaxSetting,initParam);tool.MergeObject(ajaxSetting,options);
 
@@ -114,12 +114,12 @@
             //发送请求
             xhr.send(sendData);
             
-###测试代码
-####前端同源测试代码
+### 测试代码
+#### 前端同源测试代码
     ajax.post("/api/ajax1/ajaxT1/",{"name":"测试异步post请求","age":"success"},function(data){alert(data)});  //该接口在1122上
-####前端跨域测试代码
+#### 前端跨域测试代码
     ajax.post("http://192.168.0.3:2211/api/weixin/ajaxT2/",{"name":"测试跨域post请求","age":"success"},function(data){alert(data)});
-####后端跨域接口代码
+#### 后端跨域接口代码
     /// <summary>
     /// 测试跨域请求
     /// </summary>
@@ -131,7 +131,7 @@
         String result = "跨域post传输成功："+module.name+"-"+module.age;
         return result;
     }
-####后端同源测试代码
+#### 后端同源测试代码
     /// <summary>
     /// 测试ajax同源请求
     /// </summary>
@@ -143,42 +143,42 @@
         String result = "1J跨域成功:" + name + "-" + age;
         return result;
     }
-###以下是各种浏览器的测试结果（仅提供同源post请求和跨域post请求）
-#####同源测试
-######chrome
+### 以下是各种浏览器的测试结果（仅提供同源post请求和跨域post请求）
+##### 同源测试
+###### chrome
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230238927-2089656702.png)
-######IE8-9
+###### IE8-9
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230248709-1923043215.png)
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230306302-1703939611.png)
-######IE10+
+###### IE10+
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230347068-1928619242.png)
-######firefox
+###### firefox
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230452615-113489743.png)
-######opera
+###### opera
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230611365-1169854535.png)
-######safari
+###### safari
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230713615-2040676482.png)
-######edge
+###### edge
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230814818-1130849183.png)
 
-#####跨域测试
-######chrome
+##### 跨域测试
+###### chrome
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230913599-1189375449.png)
-######IE8-9
+###### IE8-9
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230942302-1611540664.png)
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129230956990-1637046338.png)
-######IE10+
+###### IE10+
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129231021209-1271264367.png)
-######firefox
+###### firefox
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129231044943-1370903842.png)
-######opera
+###### opera
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129231104552-1637987456.png)
-######safari
+###### safari
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129231127834-855103713.png)
-######edge
+###### edge
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129231145693-678151401.png)
 
-####1.4 版本更新  ---   轮询技术的实现（需要后台接口支持）
+#### 1.4 版本更新  ---   轮询技术的实现（需要后台接口支持）
         /*
          * 长轮询的实现
          *   param: type  请求类型
@@ -219,7 +219,7 @@
   >> 聊天系统会要一直需求轮询，不间断的向后台使用数据，所以isAll = true        
   >> 等待付款业务只需要得到后台一次响应是否支付成功，所以使用回调参数中的第二个参数的stop属性，结束轮询        
 
-####1.5.0版本更新  ---   ajax的上传文件技术
+#### 1.5.0版本更新  ---   ajax的上传文件技术
     /*
      *   ajax上传文件 -- level2的新特性，请保证你的项目支持新的特性再使用
      *       url                 文件上传地址
@@ -278,7 +278,7 @@
 
 如果想要看文件上传具体内容和测试各种结果，请转到这片博客：http://www.cnblogs.com/GerryOfZhong/p/6274536.html
 
-####1.5.1版本更新  ---   ajax的大文件/超大文件上传技术  （需后台配合）
+#### 1.5.1版本更新  ---   ajax的大文件/超大文件上传技术  （需后台配合）
     /*
      *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用
      *       url                 文件上传地址
@@ -374,7 +374,7 @@
 
 备注：ajax的上传技术，在es5+之后支持，浏览器的兼容性就是除了IE10以下，大部分都支持了       
 
-####1.6版本更新  ---   集成promise规范，更优雅操作异步（主要增加了promise代码）
+#### 1.6版本更新  ---   集成promise规范，更优雅操作异步（主要增加了promise代码）
         createPromise:function(){
             var newPromise = function(fn){
                 var promise = this;
@@ -444,7 +444,7 @@
 
 如果想要看文件上传具体内容和测试各种结果，请转到这片博客：http://www.cnblogs.com/GerryOfZhong/p/7096792.html
 
-####具体代码已封装成一个js库，下面为API库
+#### 具体代码已封装成一个js库，下面为API库
   * 异步get请求          --  ajax.get
   * 异步post请求         --  ajax.post
   * 同步post请求         --  ajax.postSync
@@ -455,9 +455,9 @@
   * 大文件切割上传请求   --  ajax.upload_big
   * 通用配置请求         --  ajax.common
 
-####最近在研究原声js的ajax的技术和设计方案，总体说来还是有很大的收获的，对浏览器的了解，js的了解，服务器技术的了解，后端的温习还是有很大的进步的，特别是解决问题的能力，感觉又上了一个level。技术的未来，不会远...
+#### 最近在研究原声js的ajax的技术和设计方案，总体说来还是有很大的收获的，对浏览器的了解，js的了解，服务器技术的了解，后端的温习还是有很大的进步的，特别是解决问题的能力，感觉又上了一个level。技术的未来，不会远...
 
-###版本更新介绍
+### 版本更新介绍
   1. 跨域不需要在前端设置跨域请求报文头，现已删除   ==>author:keepfool from cnblog
   2. 更新tool一些方法，拥抱es5+新技术				==>author:pod4g from github  
   3. 删除头部参数中的跨域参数设置					==>author:wYhooo from github
@@ -469,10 +469,10 @@
   6. 更新bug，更细ajax默认值相互影响问题，调试ajax长轮询bug              
   7. 集成promise规范，更优雅操作异步         
         
-####程序员的小笑话
+#### 程序员的小笑话
 ![](http://images2015.cnblogs.com/blog/801930/201612/801930-20161210143609882-1515246004.gif)       
   
-####个人介绍
+#### 个人介绍
   * 性别：男
   * 爱好：女
   * 近期目标：前端架构师
