@@ -10,7 +10,7 @@ select file:<input type="file" id="file1" accept="*"/><br />
 
 </body>
 </html>
-<script type="text/javascript" src="ajax-dev/ajax.1.5.2.min.js"></script>
+<script type="text/javascript" src="ajax-dev/ajax.1.6.js"></script>
 <script>
     +(function(){
         var url ="api/ajax/postReq/";
@@ -70,5 +70,34 @@ select file:<input type="file" id="file1" accept="*"/><br />
             var temp = ajax.upload_big("/api/ajaxUpload/upload5/","#file1",1024*1024,"*",function(x){ },function(x,xx){console.log(x+"/"+xx)})
             console.log(temp);
         };
+
     })();
+
+    //promise 测试代码
+    ajax.promiseAjax("api/ajax/postReq/",{"name":"q","age": 2})
+            .then(function(value){
+                console.log("一般请求q"+value);
+                return ajax.promiseAjax("api/ajax/postReqSleep/",{"name":"w","age": 2});
+            })
+            .then(function(value){
+                console.log("高延迟请求w："+value);
+                return ajax.promiseAjax("api/ajax/postReq/",{"name":"r","age": 2});
+            })
+            .then(function(value){
+                console.log("一般请求r："+value);
+            });
+
+
+    ajax.promiseAjax("api/ajax/postReqSleep/",{"name":"q1","age": 2})
+            .then(function(value){
+                console.log("高延迟请求q1"+value);
+                return ajax.promiseAjax("api/ajax/postReqSleep/",{"name":"w2","age": 2});
+            })
+            .then(function(value){
+                console.log("高延迟请求w2："+value);
+                return ajax.promiseAjax("api/ajax/postReq/",{"name":"r3","age": 2});
+            })
+            .then(function(value){
+                console.log("一般请求r3："+value);
+            });
 </script>
