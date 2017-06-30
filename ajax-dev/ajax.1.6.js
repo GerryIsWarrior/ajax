@@ -165,7 +165,7 @@
             });
             return fileArr;
         },
-        //如果浏览器不支持Promise特性，将用简易的promise代替(IE11-都不支持)
+        //如果浏览器不支持Promise特性，将用简易的promise代替(IE11-都不支持ES6 Promise)
         createPromise:function(){
             var newPromise = function(fn){
                 var promise = this;
@@ -370,7 +370,7 @@
         },
         //集成promise的ajax请求(默认设置post和get请求，如有其他需求，可自己拓展)
         promiseAjax:function (url,data,type){
-            if (!window.Promise) tool.createPromise();
+            if (!window.Promise) tool.createPromise();  //保证浏览器的兼容性
             return new Promise(function(resolve, reject){
                 if (type === undefined) ajax.post(url,data,resolve,reject);
                 else ajax.get(url,data,resolve,reject);
