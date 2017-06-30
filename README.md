@@ -40,79 +40,79 @@
   5. 服务器回调，客户端接收，并做响应处理
   
 ####关键代码
-    //每次清空请求缓存,并重新合并对象
-    var ajaxSetting = {},sendData=null;tool.MergeObject(ajaxSetting,initParam);tool.MergeObject(ajaxSetting,options);
+            //每次清空请求缓存,并重新合并对象
+            var ajaxSetting = {},sendData=null;tool.MergeObject(ajaxSetting,initParam);tool.MergeObject(ajaxSetting,options);
 
-    //创建xhr对象
-    var xhr = tool.createXhrObject();
+            //创建xhr对象
+            var xhr = tool.createXhrObject();
 
-    //针对某些特定版本的mozillar浏览器的BUG进行修正
-    xhr.overrideMimeType?(xhr.overrideMimeType("text/javascript")):(null);
+            //针对某些特定版本的mozillar浏览器的BUG进行修正
+            xhr.overrideMimeType?(xhr.overrideMimeType("text/javascript")):(null);
 
-    //针对IE8的xhr做处理    PS：ie8下的xhr无xhr.onload事件，所以这里做判断
-    xhr.onload===undefined?(xhr.xhr_ie8=true):(xhr.xhr_ie8=false);
+            //针对IE8的xhr做处理    PS：ie8下的xhr无xhr.onload事件，所以这里做判断
+            xhr.onload===undefined?(xhr.xhr_ie8=true):(xhr.xhr_ie8=false);
 
-    //参数处理（get和post）,包括xhr.open     get:拼接好url再open   post:先open，再设置其他参数
-    ajaxSetting.data === ""?(xhr.open(ajaxSetting.type.toUpperCase(), ajaxSetting.url, ajaxSetting.async)):(xhr = tool.dealWithParam(ajaxSetting,this,xhr));
+            //参数处理（get和post）,包括xhr.open     get:拼接好url再open   post:先open，再设置其他参数
+            ajaxSetting.data === ""?(xhr.open(ajaxSetting.type.toUpperCase(), ajaxSetting.url, ajaxSetting.async)):(xhr = tool.dealWithParam(ajaxSetting,this,xhr));
 
-    //设置超时时间（只有异步请求才有超时时间）
-    ajaxSetting.async?(xhr.timeoutEvent = ajaxSetting.timeout):(null);
+            //设置超时时间（只有异步请求才有超时时间）
+            ajaxSetting.async?(xhr.timeoutEvent = ajaxSetting.timeout):(null);
 
-    //设置http协议的头部
-    tool.each(ajaxSetting.requestHeader,function(item,index){xhr.setRequestHeader(index,item)});
+            //设置http协议的头部
+            tool.each(ajaxSetting.requestHeader,function(item,index){xhr.setRequestHeader(index,item)});
 
-    //onload事件（IE8下没有该事件）
-    xhr.onload = function(e) {
-        if(this.status == 200||this.status == 304){
-            ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.successEvent(JSON.parse(xhr.responseText))):(ajaxSetting.successEvent(xhr.responseText));
-        }else{
-            /*
-             *  这边为了兼容IE8、9的问题，以及请求完成而造成的其他错误，比如404等
-             *   如果跨域请求在IE8、9下跨域失败不走onerror方法
-             *       其他支持了Level 2 的版本 直接走onerror
-             * */
-            ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
-        }
-    };
+            //onload事件（IE8下没有该事件）
+            xhr.onload = function(e) {
+                if(this.status == 200||this.status == 304){
+                    ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.successEvent(JSON.parse(xhr.responseText))):(ajaxSetting.successEvent(xhr.responseText));
+                }else{
+                    /*
+                     *  这边为了兼容IE8、9的问题，以及请求完成而造成的其他错误，比如404等
+                     *   如果跨域请求在IE8、9下跨域失败不走onerror方法
+                     *       其他支持了Level 2 的版本 直接走onerror
+                     * */
+                    ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
+                }
+            };
 
-    //xmlhttprequest每次变化一个状态所监控的事件（可拓展）
-    xhr.onreadystatechange = function(){
-        switch(xhr.readyState){
-            case 1://打开
-                //do something
-                break;
-            case 2://获取header
-                //do something
-                break;
-            case 3://请求
-                //do something
-                break;
-            case 4://完成
-                //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
-                xhr.xhr_ie8?((xhr.status == 200 || xhr.status == 304)?(ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.successEvent(JSON.parse(xhr.responseText))):(ajaxSetting.successEvent(xhr.responseText))):(null)):(null);
-                break;
-        };
-    };
+            //xmlhttprequest每次变化一个状态所监控的事件（可拓展）
+            xhr.onreadystatechange = function(){
+                switch(xhr.readyState){
+                    case 1://打开
+                        //do something
+                        break;
+                    case 2://获取header
+                        //do something
+                        break;
+                    case 3://请求
+                        //do something
+                        break;
+                    case 4://完成
+                        //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
+                        xhr.xhr_ie8?((xhr.status == 200 || xhr.status == 304)?(ajaxSetting.dataType.toUpperCase() == "JSON"?(ajaxSetting.successEvent(JSON.parse(xhr.responseText))):(ajaxSetting.successEvent(xhr.responseText))):(null)):(null);
+                        break;
+                };
+            };
 
-    //ontimeout超时事件
-    xhr.ontimeout = function(e){
-        ajaxSetting.timeoutEvent(999,e?(e.type):("timeoutEvent"));   //IE8 没有e参数
-        xhr.abort();  //关闭请求
-    };
+            //ontimeout超时事件
+            xhr.ontimeout = function(e){
+                ajaxSetting.timeoutEvent(999,e?(e.type):("timeoutEvent"));   //IE8 没有e参数
+                xhr.abort();  //关闭请求
+            };
 
-    //错误事件，直接ajax失败，而不走onload事件
-    xhr.onerror = function(e){
-        ajaxSetting.errorEvent();
-    };
+            //错误事件，直接ajax失败，而不走onload事件
+            xhr.onerror = function(e){
+                ajaxSetting.errorEvent();
+            };
 
-    if(this.postParam){
-        (this.postParam)?(sendData = this.postParam):(sendData = null);
-    }else{
-        sendData = ajaxSetting.data;
-    }
+            if(this.postParam){
+                (this.postParam)?(sendData = this.postParam):(sendData = null);
+            }else{
+                sendData = ajaxSetting.data;
+            }
 
-    //发送请求
-    xhr.send(sendData);
+            //发送请求
+            xhr.send(sendData);
             
 ###测试代码
 ####前端同源测试代码
@@ -179,42 +179,42 @@
 ![](http://images2015.cnblogs.com/blog/801930/201611/801930-20161129231145693-678151401.png)
 
 ####1.4 版本更新  ---   轮询技术的实现（需要后台接口支持）
-    /*
-     * 长轮询的实现
-     *   param: type  请求类型
-     *          url   请求接口地址
-     *          data  请求参数
-     *          successEvent(data,this)     成功事件处理  如果得到正确数据，则让轮询停止，则在第二个回调参数设置stop属性就好
-     *          timeFrequency               每隔多少时间发送一次请求
-     *          errorEvent                  错误事件
-     *          timeoutEvent                超时处理
-     * */
-    longPolling:function(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent){
-        var ajaxParam ={
-            type:type,
-            url:url,
-            data:data,
-            async:true,
-            isFormData:false,
-            successEvent:function(dateCall){
-                successEvent(dateCall,this);
-                if (!this.stop){
+        /*
+         * 长轮询的实现
+         *   param: type  请求类型
+         *          url   请求接口地址
+         *          data  请求参数
+         *          successEvent(data,this)     成功事件处理  如果得到正确数据，则让轮询停止，则在第二个回调参数设置stop属性就好
+         *          timeFrequency               每隔多少时间发送一次请求
+         *          errorEvent                  错误事件
+         *          timeoutEvent                超时处理
+         * */
+        longPolling:function(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent){
+            var ajaxParam ={
+                type:type,
+                url:url,
+                data:data,
+                async:true,
+                isFormData:false,
+                successEvent:function(dateCall){
+                    successEvent(dateCall,this);
+                    if (!this.stop){
+                        setTimeout(function(){
+                            tempObj.longPolling(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent);
+                        },timeFrequency);
+                    };
+                },
+                //如果走了error说明该接口有问题，没必要继续下去了
+                errorEvent:errorEvent,
+                timeoutEvent:function(){
+                    timeoutEvent();
                     setTimeout(function(){
-                        tempObj.longPolling(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent);
+                        tempObj.longPolling(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent)
                     },timeFrequency);
-                };
-            },
-            //如果走了error说明该接口有问题，没必要继续下去了
-            errorEvent:errorEvent,
-            timeoutEvent:function(){
-                timeoutEvent();
-                setTimeout(function(){
-                    tempObj.longPolling(type,url,data,successEvent,timeFrequency,errorEvent,timeoutEvent)
-                },timeFrequency);
-            }
-        };
-        ajax.common(ajaxParam);
-    },
+                }
+            };
+            ajax.common(ajaxParam);
+        },
 > 考虑到业务需求
   >> 聊天系统会要一直需求轮询，不间断的向后台使用数据，所以isAll = true        
   >> 等待付款业务只需要得到后台一次响应是否支付成功，所以使用回调参数中的第二个参数的stop属性，结束轮询        
@@ -374,10 +374,81 @@
 
 备注：ajax的上传技术，在es5+之后支持，浏览器的兼容性就是除了IE10以下，大部分都支持了       
 
+####1.6版本更新  ---   集成promise规范，更优雅操作异步（主要增加了promise代码）
+        createPromise:function(){
+            var newPromise = function(fn){
+                var promise = this;
+                //状态机的状态
+                var PROMISESTATE = {
+                    PENDING : 0 ,
+                    FULFILLED : 1 ,
+                    REJECTED : 2
+                };
+                //存储当前变量的回调函数和标记对象为promise
+                promise._fullCalll =[],promise._rejCall = [];promise._name = "promise";
+                //执行过程中的状态变化(初始化状态为默认状态)
+                var _state =  PROMISESTATE.PENDING;
+                //回调函数的参数
+                var _value = undefined;
+
+                //状态变更
+                function setState(stateT,valueT){
+                    var promise = this;
+                    _state = stateT;
+                    _value = valueT;
+                    handleFun.call(promise);  //传递作用域，并且执行回调函数
+                };
+
+                //根据状态处理回调
+                function handleFun(){
+                    var promise = this,isThen;
+
+                    if (_state === PROMISESTATE.FULFILLED &&
+                        typeof promise._fullCalll[0] === 'function') {
+                        isThen = promise._fullCalll[0](_value);
+                    };
+                    if (_state === PROMISESTATE.REJECTED &&
+                        typeof promise._rejCall[0] === 'function') {
+                        isThen = promise._rejCall[0](_value);
+                    };
+                    //对于是否可以继续进行then做判断
+                    //  1. 不可then的，直接return结束（条件：无返回值、返回值不是promise对象的）
+                    //  2. 对于可以then的，将then的回调进行处理，然后对象之间传递。
+                    if (isThen === undefined || !(typeof isThen === 'object' && isThen._name === 'promise')) return;
+
+                    promise._fullCalll.shift(); promise._rejCall.shift();      //清除当前对象使用过的对调
+                    isThen._fullCalll =promise._fullCalll;isThen._rejCall = promise._rejCall;  //将剩下的回调传递到下一个对象
+                };
+
+                //promimse入口
+                function doResolve(fn){
+                    var promise = this;
+                    fn(function(param) {
+                        setState.call(promise,PROMISESTATE.FULFILLED,param);
+                    }, function(reason) {
+                        setState.call(promise,PROMISESTATE.REJECTED,reason);
+                    });
+                };
+
+                //函数then，处理回调，返回对象保证链式调用
+                this.then = function(onFulfilled,onRejected) {
+                    this._fullCalll.push(onFulfilled);
+                    this._rejCall.push(onRejected);
+                    return this;
+                }
+
+                doResolve.call(promise,fn);
+            };
+            window.Promise = newPromise;
+        },
+
+如果想要看文件上传具体内容和测试各种结果，请转到这片博客：http://www.cnblogs.com/GerryOfZhong/p/7096792.html
+
 ####具体代码已封装成一个js库，下面为API库
   * 异步get请求          --  ajax.get
   * 异步post请求         --  ajax.post
   * 同步post请求         --  ajax.postSync
+  * promise请求          --  ajax.promiseAjax
   * 同步postForm请求     --  ajax.postFormData
   * 轮询请求             --  ajax.longPolling
   * 上传文件请求         --  ajax.upload
@@ -395,7 +466,8 @@
         a. 增加FormData数据传输方法         
         b. 新增各种类型判断方法判断类型       
         c. 更新each方法，判断如果传入参数obj为数组而且浏览器支持es5的新特性直接用数组的forEach方法     
-  5. 更新bug，更细ajax默认值相互影响问题，调试ajax长轮询bug         
+  6. 更新bug，更细ajax默认值相互影响问题，调试ajax长轮询bug              
+  7. 集成promise规范，更优雅操作异步         
         
 ####程序员的小笑话
 ![](http://images2015.cnblogs.com/blog/801930/201612/801930-20161210143609882-1515246004.gif)       
