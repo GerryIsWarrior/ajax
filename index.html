@@ -5,99 +5,117 @@
     <title>test page</title>
 </head>
 <body>
-select file:<input type="file" id="file1" accept="*"/><br />
-<input type="button" id="upload" value="upload" />
-
+select file:<input type="file" id="file1" accept="*"/><br/>
+<input type="button" id="upload" value="upload"/>
+<input type="button" id="uploadBig" value="uploadBig"/>
+<img id="imgICO"/>
 </body>
 </html>
 <script type="text/javascript" src="ajax-dev/ajax.1.6.js"></script>
 <script>
-    +(function(){
-        var url ="api/ajax/postReq/";
-        var data ={"name":"gerry","age":"888"};
-        var formData = new FormData();
-        formData.append("name","zq");
-        formData.append("age","11");
+    +(function () {
 
-        //test common
-        var ajaxParam ={
-            type:"post",
-            url:url,
-            data:data,
-            successEvent:function(comData){
-                console.log(comData);
+        //设置全局参数
+        ajax.config({
+            baseURL: '',
+            requestHeader: {},
+            publicData: {},
+            timeout: 5000,
+            responseType: 'json',
+            contentType: '',
+            withCredentials: true,
+            isOpenErr: true,
+            errURL: '',
+            //请求发送前对数据进行处理
+            transformRequest: function (data) {
+                return data;
             },
-            errorEvent:function(x,xx,xxx){
-                alert(x)
+            //得到正确请求后做的处理
+            transformResponse: function (data) {
+                return data;
             },
-            timeoutEvent:function(x,xx,xxx){
-                document.body.innerHTML =xx;
-            }
-        };
-        ajax.common(ajaxParam);
+            errorEvent: function (x, xx, xxx) {
 
-        //test get
-        ajax.get("api/ajax/getReq/",data,function(getData){
-            console.log(getData);
+            },           //请求失败处理事件
+            timeoutEvent: function (code, e) {
+            }                 //请求超时处理事件
+        })
+
+
+        ajax.get('getAjax/',{name:'get请求成功',age:11},function (res) {
+            console.log(res.name)
+        })
+        //test post
+        ajax.post("api/cores/postAjax/",{name:'post请求测试成功',age:1},function(getData){
+            console.log(getData.name);
         });
+
+        ajax.post("http://10.73.1.198:9876/api/cores/postAjax/",{name:'post请求测试成功',age:1},function(getData){
+            console.log(getData.name);
+        });
+
+        var formData = new FormData();
+        formData.append("name", "post Form请求测试成功");
+        formData.append("age", 11);
+        ajax.postFormData("postForm/",formData,function (res) {
+            console.log(res.name)
+        })
 
         //test post
-        ajax.post("api/ajax/postReq/",data,function(getData){
-            console.log(getData);
+        ajax.postJSON("postAjax/",{name:'postJSON请求测试成功',age:1},function(getData){
+            console.log(getData.name);
         });
 
-        //test postSync
-        ajax.postSync("api/ajax/postReq/",data,function(getData){
-            console.log(getData);
+        //test ObtainBlob(确保地址正确)
+        ajax.obtainBlob("get","http://10.73.1.198:9999/Scripts/lei.jpg", '', function (getData) {
+            var reader = new FileReader();
+            reader.readAsDataURL(getData)
+            reader.onload = function (e) {
+                document.querySelector("#imgICO").setAttribute('src',e.target.result)
+            }
+            console.log(typeof getData);
         });
 
-        //test postFormData
-        ajax.postFormData("api/ajax/formReq/",formData,function(getData){
-            console.log(getData);
-        });
+        //promise一般测试
+        ajax.promiseAjax('postReqSleep/',{name:'promise高延迟接口测试1',age:123})
+            .then(function (res) {
+                console.log(res.name)
+                return ajax.promiseAjax('postAjax/',{name:'promise一般接口测试2',age:456})
+            }).then(function (res) {
+            console.log(res.name)
+        })
 
-        //test longPolling
-        ajax.longPolling("post","api/ajax/postReq/",data,function(getData1,that){
-            //you can use 'that.stop=true' to stop  polling
-            console.log(getData1);
-        },4000);
+        //并发promise测试
+        ajax.promiseAjax('postAjax/',{name:'promise并发接口测试3',age:123456})
+            .then(function (res) {
+                console.log(res.name)
+                return ajax.promiseAjax('postReqSleep/',{name:'promise并发高延迟接口测试4',age:456789})
+            }).then(function (res) {
+            console.log(res.name)
+        })
 
+        var longTemp = 0;
+        ajax.longPolling('post','postAjax/',{name:'轮询测试',age:123456},function (res,that) {
+            console.log(res.name+longTemp)
+            longTemp+=1;
+            if (longTemp === 10){
+                that.stop = true;
+            }
+        },1000)
+//
         //test uploadFile
         document.querySelector("#upload").onclick = function () {
-            //one file
-//            var temp = ajax.upload("/api/ajaxUpload/upload3/","#file1",1024*1024*1024,["image/jpeg"],function(x){ console.log(x)})
-            //big file
-            var temp = ajax.upload_big("/api/ajaxUpload/upload5/","#file1",1024*1024,"*",function(x){ },function(x,xx){console.log(x+"/"+xx)})
+            var temp = ajax.upload("upload/","#file1",1024*1024,['image/png'],function(x){ })
             console.log(temp);
         };
 
+        //test uploadFile
+        document.querySelector("#uploadBig").onclick = function () {
+//            var temp = ajax.upload_big("api/cores/uploadBig/","#file1",1024*1024,"*",function(x){},function(count,all){console.log("当前传输进度："+count+"/"+all);})
+            var temp = ajax.upload_big("api/cores/uploadBig/","#file1",1024*1024,"*",function(x){},function(count,all){console.log("当前传输进度："+count+"/"+all);})
+            console.log(temp);
+        };
+
+        JSON.parse(undefined)
     })();
-
-    //promise 测试代码
-    ajax.promiseAjax("api/ajax/postReq/",{"name":"q","age": 2})
-            .then(function(value){
-                console.log("一般请求q"+value);
-                return ajax.promiseAjax("api/ajax/postReqSleep/",{"name":"w","age": 2});
-            })
-            .then(function(value){
-                console.log("高延迟请求w："+value);
-                return ajax.promiseAjax("api/ajax/postReq/",{"name":"r","age": 2});
-            })
-            .then(function(value){
-                console.log("一般请求r："+value);
-            });
-
-
-    ajax.promiseAjax("api/ajax/postReqSleep/",{"name":"q1","age": 2})
-            .then(function(value){
-                console.log("高延迟请求q1"+value);
-                return ajax.promiseAjax("api/ajax/postReqSleep/",{"name":"w2","age": 2});
-            })
-            .then(function(value){
-                console.log("高延迟请求w2："+value);
-                return ajax.promiseAjax("api/ajax/postReq/",{"name":"r3","age": 2});
-            })
-            .then(function(value){
-                console.log("一般请求r3："+value);
-            });
 </script>
