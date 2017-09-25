@@ -6,11 +6,11 @@
  * email:        gerry.zhong@outlook.com
  * update:          --1.1   去除跨域请求头部设置   ==> author: keepfool (cnblogs)
  *                  --1.2   更新tool方法，完善结构  ==> author: pod4g  (github)
- *                    --1.3   去除参数中的跨域设置，post方法已经支持跨域   ==>author: wYhooo  (github)
- *                    --1.4   集成ajax的轮询技术
+ *                  --1.3   去除参数中的跨域设置，post方法已经支持跨域   ==>author: wYhooo  (github)
+ *                  --1.4   集成ajax的轮询技术
  *                    --1.5.0 集成ajax level2的文件上传 新增tool.is对象，判断数据类型，支持formData数据类型发送
- *                  --1.5.1 集成ajax大文件切割上传，upload_big方法，新增文件切割方法tool.cutFile 返回值为切割好的数组对象
- *                  --1.5.2 更新bug，更细ajax默认值相互影响问题，调试ajax长轮询bug
+ *                    --1.5.1 集成ajax大文件切割上传，upload_big方法，新增文件切割方法tool.cutFile 返回值为切割好的数组对象
+ *                    --1.5.2 更新bug，更细ajax默认值相互影响问题，调试ajax长轮询bug
  *                  --1.6   集成promise规范，更优雅的操作异步
  *                  --1.7   新增ajax的全局配置、对请求参数拓展和重构、对初始化参数类型检查（非正确格式则恢复默认）、增加浏览器错误回收机制、增加请求blob类型、增加跨域传递凭证配置
  */
