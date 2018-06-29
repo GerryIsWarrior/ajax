@@ -1,23 +1,21 @@
 /**
  * purpose：     ajax通用解决方案
  * author：      仲强
- * version:      1.7
- * date:         2017-9-21
+ * version:      1.8
+ * date:         2018-06-29
  * email:        gerry.zhong@outlook.com
  * update:          --1.1   去除跨域请求头部设置   ==> author: keepfool (cnblogs)
  *                  --1.2   更新tool方法，完善结构  ==> author: pod4g  (github)
- *                    --1.3   去除参数中的跨域设置，post方法已经支持跨域   ==>author: wYhooo  (github)
- *                    --1.4   集成ajax的轮询技术
+ *                  --1.3   去除参数中的跨域设置，post方法已经支持跨域   ==>author: wYhooo  (github)
+ *                  --1.4   集成ajax的轮询技术
  *                    --1.5.0 集成ajax level2的文件上传 新增tool.is对象，判断数据类型，支持formData数据类型发送
- *                  --1.5.1 集成ajax大文件切割上传，upload_big方法，新增文件切割方法tool.cutFile 返回值为切割好的数组对象
- *                  --1.5.2 更新bug，更细ajax默认值相互影响问题，调试ajax长轮询bug
+ *                    --1.5.1 集成ajax大文件切割上传，upload_big方法，新增文件切割方法tool.cutFile 返回值为切割好的数组对象
+ *                    --1.5.2 更新bug，更细ajax默认值相互影响问题，调试ajax长轮询bug
  *                  --1.6   集成promise规范，更优雅的操作异步
  *                  --1.7   新增ajax的全局配置、对请求参数拓展和重构、对初始化参数类型检查（非正确格式则恢复默认）、增加浏览器错误回收机制、增加请求blob类型、增加跨域传递凭证配置
  *                  --1.8   增加请求错误监控、前端负载均衡、宕机切换、以及迭代问题修复
  */
-(function () {
-
-  var root = this
+(function (window) {
   //默认参数
   var initParam = {
     url: "",
@@ -63,8 +61,7 @@
     },
     timeoutEvent: function (code, e) {
     }
-  }
-
+  };
   //初始化参数固定类型检查
   var initParamType = {
     url: "String",
@@ -86,8 +83,7 @@
     successEvent: 'function',
     errorEvent: 'function',
     timeoutEvent: 'function'
-  }
-
+  };
   // 内部使用数据
   var selfData = {
     errAjax: {},
@@ -394,8 +390,7 @@
       }
 
     }
-  }
-
+  };
   //抛出去给外部使用的方法
   var tempObj = {
     //通用ajax
@@ -841,20 +836,17 @@
         ajax.common(ajaxParam);
       }
     }
-  }
+  };
 
   var outputObj = function () {
     //虽然在IE6、7上可以支持，但是最好升级你的浏览器，毕竟xp已经淘汰，面向未来吧，骚年，和我一起努力吧！！
     if (tool.getIEVersion() < 7) {
       //实在不想说：lowB，升级你的浏览器吧
       throw new Error("Sorry,please upgrade your browser.(IE8+)");
-    } else {
-      tool.each(tempObj, function (value, key) {
-        root[key] = value
-      })
     }
+    return tempObj;
   };
 
-  new outputObj();
+  window.ajax = new outputObj();
 
-}.call(this));
+})(this);
