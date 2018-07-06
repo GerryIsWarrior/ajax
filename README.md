@@ -540,9 +540,9 @@
 #### 1.8版本更新  --- 增加请求错误监控、前端负载均衡、宕机切换、以及迭代问题修复
 
 此次对于请求的错误监控进行了搜集，前端的负载均衡，将流量打到不同的服务器上，以及在请求宕机之后的备份切换
-每次迭代都会对新的代码做测试讲解，所以篇幅比较多，so
- 博客园：http://www.cnblogs.com/GerryOfZhong/p/7575820.html     
- 知乎：https://zhuanlan.zhihu.com/p/29640921
+每次迭代都会对新的代码做测试讲解，所以篇幅比较多，so     
+ 博客园：https://www.cnblogs.com/GerryOfZhong/p/9245510.html    
+ 知乎：https://zhuanlan.zhihu.com/p/38685979
  
  
  
