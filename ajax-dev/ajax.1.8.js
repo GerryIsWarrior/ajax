@@ -564,7 +564,7 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      ajax.common(ajaxParam);
+      tempObj.common(ajaxParam);
     },
     //异步post请求
     post: function (url, data, successEvent, errorEvent, timeoutEvent) {
@@ -577,7 +577,7 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      ajax.common(ajaxParam);
+      tempObj.common(ajaxParam);
     },
     //异步post请求
     postJSON: function (url, data, successEvent, errorEvent, timeoutEvent) {
@@ -590,7 +590,7 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      ajax.common(ajaxParam);
+      tempObj.common(ajaxParam);
     },
     //异步post请求
     postFormData: function (url, formData, successEvent, errorEvent, timeoutEvent) {
@@ -603,7 +603,7 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      ajax.common(ajaxParam);
+      tempObj.common(ajaxParam);
     },
     //获取blob数据集
     obtainBlob: function (type, url, data, successEvent, errorEvent, timeoutEvent) {
@@ -616,14 +616,14 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      ajax.common(ajaxParam);
+      tempObj.common(ajaxParam);
     },
     //集成promise的ajax请求(默认设置post和get请求，如有其他需求，可自己拓展)
     promiseAjax: function (url, data, type) {
       if (!window.Promise) tool.createPromise();  //保证浏览器的兼容性
       return new Promise(function (resolve, reject) {
-        if (type === undefined) ajax.post(url, data, resolve, reject);
-        else ajax.get(url, data, resolve, reject);
+        if (type === undefined) tempObj.post(url, data, resolve, reject);
+        else tempObj.get(url, data, resolve, reject);
       });
     },
     /*
@@ -659,7 +659,7 @@
           }, timeFrequency);
         }
       };
-      ajax.common(ajaxParam);
+      tempObj.common(ajaxParam);
     },
     /*
      *   ajax上传文件 -- level2的新特性，请保证你的项目支持新的特性再使用
@@ -720,7 +720,7 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      ajax.common(ajaxParam);
+      tempObj.common(ajaxParam);
     },
     /*
      *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用
@@ -777,7 +777,7 @@
           errorEvent: errorEvent,
           timeoutEvent: timeoutEvent
         };
-        ajax.common(ajaxParam);
+        tempObj.common(ajaxParam);
       }
       ;
 
@@ -833,7 +833,7 @@
           errorEvent: errorEvent,
           timeoutEvent: timeoutEvent
         };
-        ajax.common(ajaxParam);
+        tempObj.common(ajaxParam);
       }
     }
   };
