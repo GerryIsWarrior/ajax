@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>测试</title>
+    <script src="../ajax-dev/ajax.1.8.js"></script>
+</head>
+<body>
+    测试页面勿怪
+</body>
+</html>
+<script>
+    ajax.post('http://localhost:3000/post',{a:123},function (res) {
+        console.log(res)
+    })
+</script>

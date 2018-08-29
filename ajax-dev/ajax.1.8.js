@@ -26,7 +26,7 @@
     requestHeader: {},
     publicData: {},
     timeout: 5000,
-    responseType: 'json',
+    responseType: '',
     contentType: '',
     withCredentials: false,
     // 错误搜集
@@ -370,7 +370,6 @@
     },
     //监控ajax请求的错误日志
     uploadAjaxError: function (obj) {
-      // debugger
       if (initParam.errStatus.isOpenErr) {
         if (obj.errUrl !== initParam.errStatus.errURL) {
           tempObj.post(initParam.errStatus.errURL, obj)
@@ -453,6 +452,9 @@
       tool.each(ajaxSetting.requestHeader, function (item, index) {
         xhr.setRequestHeader(index, item)
       });
+
+      // 是否允许传输跨域凭证
+      xhr.withCredentials = ajaxSetting.withCredentials
 
       //onload事件（IE8下没有该事件）
       xhr.onload = function (e) {
