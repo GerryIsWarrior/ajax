@@ -17,5 +17,9 @@ router.post('/post', function(req, res) {
     res.send('123')
 });
 
+router.post('/postOther', function(req, res) {
+  res.send('123')
+});
+
 
 module.exports = router;

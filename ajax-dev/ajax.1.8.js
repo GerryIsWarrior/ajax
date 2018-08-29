@@ -87,7 +87,8 @@
   // 内部使用数据
   var selfData = {
     errAjax: {},
-    isNeedSwitching: false
+    isNeedSwitching: false,
+    xhr:{}
   }
 
   //内部使用工具
@@ -548,6 +549,12 @@
 
       //发送请求
       xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
+
+      selfData.xhr = xhr
+    },
+    testXHr:function(){
+      selfData.xhr.open('POST','http://localhost:3000/postOther')
+      selfData.xhr.send()
     },
     //设置ajax全局配置文件
     config: function (config) {
