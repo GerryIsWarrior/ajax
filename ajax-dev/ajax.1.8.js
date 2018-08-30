@@ -93,7 +93,7 @@
 
   //内部使用工具
   var tool = {
-    random(max, min) {
+    random: function(max, min) {
       return Math.floor(Math.random() * (max - min + 1) + min)
     },
     hasOwn: function (obj, key) {
@@ -459,6 +459,7 @@
 
       //onload事件（IE8下没有该事件）
       xhr.onload = function (e) {
+        console.log(xhr.readyState)
         if (this.status == 200 || this.status == 304) {
           /*
           *  ie浏览器全系列不支持responseType='json'，所以在ie下使用JSON.parse进行转换
@@ -497,9 +498,12 @@
           case 4://完成
             //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
             if (xhr.xhr_ie8) {
-              if (xhr.status == 200 || xhr.status == 304) {
+              if (xhr.status === 200 || xhr.status === 304) {
+                console.log(ajaxSetting)
                 if (ajaxSetting.responseType == "json") {
                   ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(xhr.responseText)))
+                }else{
+                    ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.responseText))
                 }
               }
             }

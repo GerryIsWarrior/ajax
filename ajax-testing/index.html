@@ -11,12 +11,12 @@
 </html>
 <script>
   console.time('默认post请求发出时间：')
-  ajax.post('http://localhost:3000/post',{a:123},function (res) {
+  window.ajax.post('http://localhost:3000/post',{a:123},function (res) {
     console.log('我获取到：',res)
   })
   console.timeEnd('默认post请求发出时间：')
 
   console.time('优化之后时间：')
-  ajax.testXHr()
+  window.ajax.testXHr()
   console.timeEnd('优化之后时间：')
 </script>
