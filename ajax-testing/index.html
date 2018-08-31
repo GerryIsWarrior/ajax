@@ -10,13 +10,33 @@
 </body>
 </html>
 <script>
-  console.time('默认post请求发出时间：')
-  ajax.post('http://localhost:3000/post',{a:123},function (res) {
-    console.log('我获取到：',res)
-  })
-  console.timeEnd('默认post请求发出时间：')
 
-  console.time('优化之后时间：')
-  ajax.testXHr()
-  console.timeEnd('优化之后时间：')
+  for (var i = 0; i < 100; i++) {
+    console.time("")
+    ajax.post(`http://localhost:3000/post?${new Date().getTime()}`,{a:new Date().getTime()},function (res) {
+      // console.log('我获取到：',res)
+    })
+    console.timeEnd("")
+  }
+
+
+  // var qqq = 0
+  // var temp = setInterval(function () {
+  //   if (qqq === 100) {
+  //     window.clearInterval(temp);
+  //   }
+  //   console.time("")
+  //   ajax.post(`http://localhost:3000/post?${new Date().getTime()}`,{a:new Date().getTime()},function (res) {
+  //     // console.log('我获取到：',res)
+  //   })
+  //   console.timeEnd("")
+  //   qqq++
+  // },20)
+
+
+
+
+  // console.time('优化之后时间：')
+  // ajax.testXHr()
+  // console.timeEnd('优化之后时间：')
 </script>
