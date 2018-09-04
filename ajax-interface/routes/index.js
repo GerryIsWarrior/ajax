@@ -14,14 +14,15 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/post', function(req, res) {
-  setTimeout(function () {
-    res.send('我是post')
-  },2000)
+  res.send('我是post')
 });
 
 router.post('/postOther', function(req, res) {
   res.send('我是postOther')
 });
 
+router.get('/get', function(req, res) {
+  res.send('我是get')
+});
 
 module.exports = router;
