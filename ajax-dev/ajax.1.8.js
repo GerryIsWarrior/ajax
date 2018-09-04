@@ -431,16 +431,21 @@
     // 创建请求池中链接
     createPool: function () {
       tempObj.common({},true)
+      // debugger
       // console.warn(selfData.xhr.onload)
       tool.deepCloneXhr(selfData.xhr)
     },
     // 请求使用
     useRequestPool: function (param) {
+      console.warn(param)
       // 判断请求池中是否有可用请求
       // console.log('请求池中数量：',selfData.requestPool.length)
+
+      console.log(selfData.requestPool)
+
       if (selfData.requestPool.length !== 0) {
         var temp = selfData.requestPool.shift()
-
+        temp.readyState = 0
         // console.log(temp)
 
         var tempObj = {},sendData
@@ -449,7 +454,9 @@
         tempObj.contentType = param.contentType
         tempObj.data = param.data
         tempObj.type = param.type
+        tempObj.successEvent = param.successEvent
 
+        console.warn(tempObj.url)
 
         // 处理参数
         switch (tempObj.contentType) {
@@ -474,6 +481,7 @@
             break
         }
 
+
         //判断请求类型
         if (param.type === 'get') {
           temp.open(param.type, tool.checkRealUrl(tempObj, temp) + '?' + sendData)
@@ -481,12 +489,14 @@
           temp.open(param.type, tool.checkRealUrl(tempObj, temp))
         }
 
+        // console.log(tempObj.successEvent)
         // temp.callback_success = function(){console.log('走了')}
         temp.callback_success = tempObj.successEvent
 
+
         //发送请求
         temp.send(tempObj.type === 'get' ? '' : sendData);
-
+        debugger
       }else{
         // 没有请求，加载到待发送队列中
         selfData.queuePool.push(param)
@@ -495,10 +505,15 @@
     // 请求周期结束操作
     responseOver:function (xhr) {
       selfData.requestPool.push(xhr)
+
+      console.log(selfData.requestPool)
       // console.log('排队数量：',selfData.queuePool.length)
       if (selfData.queuePool.length > 0) {
         var tempData = selfData.queuePool.shift()
+        // console.warn(tempData)
         tool.useRequestPool(tempData)
+      }else{
+        // console.log('没有数据要请求了')
       }
     }
   };
@@ -573,8 +588,9 @@
 
       //onload事件（IE8下没有该事件）
       xhr.onload = function (e) {
-        console.log(xhr.readyState)
-        if (this.status == 200 || this.status == 304) {
+        // console.log('进入onload',xhr)
+        if (xhr.readyState === 4 && (xhr.status == 200 || xhr.status == 304)) {
+          console.log('进入onload',xhr)
           /*
           *  ie浏览器全系列不支持responseType='json'，所以在ie下使用JSON.parse进行转换
           * */
@@ -612,15 +628,20 @@
       xhr.onreadystatechange = function () {
         switch (xhr.readyState) {
           case 1://打开
+            // debugger
+            console.log('s1')
             //do something
             break;
           case 2://获取header
+            console.log('s2')
             //do something
             break;
           case 3://请求
+            console.log('s3')
             //do something
             break;
           case 4://完成
+            console.log('s4')
             //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
             if (xhr.xhr_ie8) {
               if (xhr.status === 200 || xhr.status === 304) {
@@ -680,13 +701,12 @@
         //发送请求
         xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
       }else{
+        // debugger
+        // console.warn('初始化参数成功')
         selfData.xhr = xhr
+        xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
       }
 
-    },
-    testXHr:function(){
-      selfData.requestPool[0].open('POST','http://localhost:3000/postOther')
-      selfData.requestPool[0].send()
     },
     //设置ajax全局配置文件
     config: function (config) {
