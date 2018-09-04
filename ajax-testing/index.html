@@ -7,13 +7,30 @@
 </head>
 <body>
 测试页面勿怪
+<button onclick="f()">测试</button>
 </body>
 </html>
 <script>
 
-  for (var i = 0; i < 5; i++) {
+  for (var i = 0; i < 10; i++) {
     console.time("")
-    ajax.post(`http://localhost:3000/post?${new Date().getTime()}`,{a:new Date().getTime()},function (res) {
+    ajax.post(`http://localhost:3000/post?3000`,{a:new Date().getTime()},function (res) {
+      console.log('我获取到：',res)
+    })
+    console.timeEnd("")
+  }
+
+  for (var i = 0; i < 10; i++) {
+    console.time("")
+    ajax.post(`http://localhost:4000/post?4000`,{a:new Date().getTime()},function (res) {
+      console.log('我获取到：',res)
+    })
+    console.timeEnd("")
+  }
+
+  for (var i = 0; i < 10; i++) {
+    console.time("")
+    ajax.post(`http://localhost:5000/post?5000`,{a:new Date().getTime()},function (res) {
       console.log('我获取到：',res)
     })
     console.timeEnd("")
@@ -22,19 +39,26 @@
 
   // var qqq = 0
   // var temp = setInterval(function () {
-  //   if (qqq === 6) {
+  //   if (qqq === 1) {
   //     window.clearInterval(temp);
   //   }
   //   console.time("")
-  //   ajax.post(`http://localhost:3000/post?${new Date().getTime()}`,{a:new Date().getTime()},function (res) {
+  //   ajax.post(`http://localhost:3000/postOther?${new Date().getTime()}`,{a:new Date().getTime()},function (res) {
   //     console.log('获得相应：',res)
   //   })
   //   console.timeEnd("")
   //   qqq++
-  // },100)
+  // },1000)
 
 
+  // ajax.post(``,{a:new Date().getTime()},function (res) {
+  //   console.log('我获取到：',res)
+  // })
 
+
+  function f() {
+    ajax.testXhr()
+  }
 
   // console.time('优化之后时间：')
   // ajax.testXHr()

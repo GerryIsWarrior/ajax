@@ -14,11 +14,13 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/post', function(req, res) {
-    res.send('123')
+  setTimeout(function () {
+    res.send('我是post')
+  },2000)
 });
 
 router.post('/postOther', function(req, res) {
-  res.send('123')
+  res.send('我是postOther')
 });
 
 

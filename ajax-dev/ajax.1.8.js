@@ -50,7 +50,7 @@
     },
     // 请求池
     pool:{
-      isOpen:true,
+      isOpen:false,
       requestNumber:6,
     },
 
@@ -58,6 +58,7 @@
       return data;
     },
     transformResponse: function (data) {
+      // console.warn('data:',data)
       return data;
     },
     successEvent: function (data) {
@@ -399,7 +400,7 @@
 
     },
     // 深度拷贝对象
-    deepCloneXhr:function (data) {
+    deepCloneXhr:function (data,requestNum) {
       var mapping = {
         currentUrl:true,
         onerror:true,
@@ -418,13 +419,36 @@
         }
       }
 
-      for (var i = 0; i < 6; i++) {
-        var aaa = tool.createXhrObject()
+      // var nullRequest = tool.createXhrObject()
+      // nullRequest['currentUrl'] = temp['currentUrl']
+      // nullRequest['onerror'] = temp['onerror']
+      // nullRequest['onload'] = temp['onload']
+      // nullRequest['onreadystatechange'] = temp['onreadystatechange']
+      // nullRequest['ontimeout'] = temp['ontimeout']
+      // nullRequest['responseType'] = temp['responseType']
+      // nullRequest['timeout'] = temp['timeout']
+      // nullRequest['withCredentials'] = temp['withCredentials']
+      // nullRequest['xhr_ie8'] = temp['xhr_ie8']
+
+      // nullRequest.callback_success = function(res){
+      //   alert(res)
+      // }
+
+      // nullRequest.open('post','http://localhost:3000/postOther')
+      // nullRequest.send()
+      //
+      // console.warn(nullRequest)
+      // console.warn(temp)
+
+
+      for (var i = 0; i < requestNum; i++) {
+        var nullRequest = tool.createXhrObject()
 
         // console.warn('temp:',temp)
         // console.warn('xhr:',Object.assign(aaa,temp))
-        Object.assign(aaa,temp)
-        selfData.requestPool.push(aaa)
+        Object.assign(nullRequest,temp)
+        selfData.requestPool.push(nullRequest)
+        // console.log(selfData.requestPool)
         // return temp;
       }
     },
@@ -433,22 +457,25 @@
       tempObj.common({},true)
       // debugger
       // console.warn(selfData.xhr.onload)
-      tool.deepCloneXhr(selfData.xhr)
+      tool.deepCloneXhr(selfData.xhr,initParam.pool.requestNumber)
     },
     // 请求使用
     useRequestPool: function (param) {
-      console.warn(param)
+      // console.warn(param)
       // 判断请求池中是否有可用请求
       // console.log('请求池中数量：',selfData.requestPool.length)
 
-      console.log(selfData.requestPool)
+      // console.log(selfData.requestPool)
 
       if (selfData.requestPool.length !== 0) {
         var temp = selfData.requestPool.shift()
-        temp.readyState = 0
-        // console.log(temp)
 
-        var tempObj = {},sendData
+        temp.callback_success = param.successEvent
+        temp.data = param.data
+
+
+
+        var tempObj = {},sendData = ''
         tool.MergeObject(tempObj,initParam)
         tempObj.url = param.url
         tempObj.contentType = param.contentType
@@ -456,7 +483,7 @@
         tempObj.type = param.type
         tempObj.successEvent = param.successEvent
 
-        console.warn(tempObj.url)
+        // console.warn(tempObj.url)
 
         // 处理参数
         switch (tempObj.contentType) {
@@ -483,7 +510,7 @@
 
 
         //判断请求类型
-        if (param.type === 'get') {
+        if (tempObj.type === 'get') {
           temp.open(param.type, tool.checkRealUrl(tempObj, temp) + '?' + sendData)
         } else {
           temp.open(param.type, tool.checkRealUrl(tempObj, temp))
@@ -491,12 +518,12 @@
 
         // console.log(tempObj.successEvent)
         // temp.callback_success = function(){console.log('走了')}
-        temp.callback_success = tempObj.successEvent
+
 
 
         //发送请求
         temp.send(tempObj.type === 'get' ? '' : sendData);
-        debugger
+        // debugger
       }else{
         // 没有请求，加载到待发送队列中
         selfData.queuePool.push(param)
@@ -506,7 +533,7 @@
     responseOver:function (xhr) {
       selfData.requestPool.push(xhr)
 
-      console.log(selfData.requestPool)
+      // console.log(selfData.requestPool)
       // console.log('排队数量：',selfData.queuePool.length)
       if (selfData.queuePool.length > 0) {
         var tempData = selfData.queuePool.shift()
@@ -588,31 +615,36 @@
 
       //onload事件（IE8下没有该事件）
       xhr.onload = function (e) {
-        // console.log('进入onload',xhr)
-        if (xhr.readyState === 4 && (xhr.status == 200 || xhr.status == 304)) {
-          console.log('进入onload',xhr)
+        // console.log('进入onload',this)
+        if (this.readyState === 4 && (this.status == 200 || this.status == 304)) {
           /*
           *  ie浏览器全系列不支持responseType='json'，所以在ie下使用JSON.parse进行转换
           * */
-          if (ajaxSetting.responseType === 'json') {
+          if (this.responseType === 'json') {
             if (isNaN(tool.getIEVersion())) {
-              xhr.callback_success?xhr.callback_success(ajaxSetting.transformResponse(xhr.response)):ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.response));
+              this.callback_success?
+                this.callback_success(ajaxSetting.transformResponse(this.response)):
+                ajaxSetting.successEvent(ajaxSetting.transformResponse(this.response));
 
 
               // ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.response));
             } else {
 
-              xhr.callback_success?xhr.callback_success(ajaxSetting.transformResponse(JSON.parse(xhr.responseText))):ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(xhr.responseText)));
+              this.callback_success?
+                this.callback_success(ajaxSetting.transformResponse(JSON.parse(this.responseText))):
+                ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(this.responseText)));
               // ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(xhr.responseText)));
             }
           } else {
-            xhr.callback_success?xhr.callback_success(ajaxSetting.transformResponse(xhr.response)):ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.response));
+            this.callback_success?
+              this.callback_success(ajaxSetting.transformResponse(this.response)):
+              ajaxSetting.successEvent(ajaxSetting.transformResponse(this.response));
 
             // ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.response));
           }
 
           if (ajaxSetting.pool.isOpen) {
-            tool.responseOver(xhr)
+            tool.responseOver(this)
           }
         } else {
           /*
@@ -620,47 +652,53 @@
            *   如果跨域请求在IE8、9下跨域失败不走onerror方法
            *       其他支持了Level 2 的版本 直接走onerror
            * */
-          ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
+          this.errorEvent ?
+            this.errorEvent(e.currentTarget.status, e.currentTarget.statusText) :
+            ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
+          // ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
         }
       };
 
       //xmlhttprequest每次变化一个状态所监控的事件（可拓展）
       xhr.onreadystatechange = function () {
-        switch (xhr.readyState) {
+        switch (this.readyState) {
           case 1://打开
             // debugger
-            console.log('s1')
+            // console.log('s1')
             //do something
             break;
           case 2://获取header
-            console.log('s2')
+            // console.log('s2')
             //do something
             break;
           case 3://请求
-            console.log('s3')
+            // console.log('s3')
             //do something
             break;
           case 4://完成
-            console.log('s4')
+            // console.log('s4')
             //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
-            if (xhr.xhr_ie8) {
-              if (xhr.status === 200 || xhr.status === 304) {
-                console.log(ajaxSetting)
-                if (ajaxSetting.responseType == "json") {
-                  ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(xhr.responseText)))
+            if (this.xhr_ie8) {
+              if (this.status === 200 || this.status === 304) {
+                if (this.responseType == "json") {
+                  this.callback_success?
+                    this.callback_success(ajaxSetting.transformResponse(JSON.parse(this.responseText))):
+                    ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(this.responseText)))
                 }else{
-                    ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.responseText))
+                  this.callback_success?
+                    this.callback_success(ajaxSetting.transformResponse(this.responseText)):
+                    ajaxSetting.successEvent(ajaxSetting.transformResponse(this.responseText))
                 }
               }
             }
 
-            if (/(^4.+)|(^5.+)/.test(xhr.status)) {
+            if (/(^4.+)|(^5.+)/.test(this.status)) {
               // 请求错误搜集
               tool.uploadAjaxError({
                 type: 'request',
-                errInfo: JSON.stringify(ajaxSetting.data),
+                errInfo: JSON.stringify(this.data?this.data:ajaxSetting.data),
                 errUrl: this.currentUrl,
-                errLine: xhr.status,
+                errLine: this.status,
                 Browser: navigator.userAgent
               })
             }
@@ -701,12 +739,15 @@
         //发送请求
         xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
       }else{
-        // debugger
         // console.warn('初始化参数成功')
         selfData.xhr = xhr
-        xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
       }
 
+    },
+    testXhr:function(){
+      // debugger
+      selfData.requestPool[0].open('post','http://localhost:3000/postOther')
+      selfData.requestPool[0].send()
     },
     //设置ajax全局配置文件
     config: function (config) {
