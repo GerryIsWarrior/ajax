@@ -6,7 +6,7 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
   res.header("Access-Control-Allow-Credentials", true)
   res.header("Access-Control-Allow-Origin", "*")
-  res.header("Access-Control-Allow-Headers", "X-Requested-With")
+  res.header("Access-Control-Allow-Headers", "X-Requested-With,shopID")
   res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS")
   res.header("X-Powered-By", ' 3.2.1')
   res.header("Content-Type", "application/json;charset=utf-8")
@@ -14,7 +14,12 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/post', function(req, res) {
-  res.send('我是post')
+  // JSON.parse('a')
+  // setTimeout(function () {
+  //   res.send({ message: 'ok' });
+  // },10000)
+
+  res.send({ message: 'ok' });
 });
 
 router.post('/postOther', function(req, res) {

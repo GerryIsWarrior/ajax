@@ -26,7 +26,7 @@
     requestHeader: {},
     publicData: {},
     timeout: 5000,
-    responseType: '',
+    responseType: 'json',
     contentType: '',
     withCredentials: false,
     // 错误搜集
@@ -174,6 +174,34 @@
       }
       return target;
     },
+    // 深度拷贝对象
+    deepClone: function (data) {
+      var obj = null, originQueue = [data], visitQueue = [], copyVisitQueue = []
+      Array.isArray(originQueue[0]) ? obj = [] : obj = {}
+      var copyQueue = [obj];
+      while (originQueue.length > 0) {
+        var _data = originQueue.shift();
+        var _obj = copyQueue.shift();
+        visitQueue.push(_data);
+        copyVisitQueue.push(_obj);
+        for (var key in _data) {
+          var _value = _data[key]
+          if (typeof _value !== 'object') {
+            _obj[key] = _value;
+          } else {
+            var index = visitQueue.indexOf(_value)
+            if (index > -1) {
+              _obj[key] = copyVisitQueue[index];
+            } else {
+              originQueue.push(_value);
+              Array.isArray(_value) ? _obj[key] = [] : _obj[key] = {}
+              copyQueue.push(_obj[key]);
+            }
+          }
+        }
+      }
+      return obj;
+    },
     //创建xhr对象
     createXhrObject: function () {
       var xhr;
@@ -188,13 +216,10 @@
     },
     //检查初始化参数
     checkParam: function (options) {
-      var temp = {};
-      tool.MergeObject(temp, initParam);
-      //解决深度拷贝引用地址问题
-      temp.data = JSON.parse(JSON.stringify(temp.data))
-      temp.requestHeader = JSON.parse(JSON.stringify(temp.requestHeader))
-      temp.publicData = JSON.parse(JSON.stringify(temp.publicData))
+      // 升级深度拷贝丑陋的写法
+      var temp = tool.deepClone(initParam);
       tool.MergeObject(temp, options);
+
       return tool.checkDataTypeBatch(temp, initParamType) ? temp : {};
     },
     /*
@@ -431,7 +456,7 @@
     useRequestPool: function (param) {
       // 判断请求池中是否有可用请求
       if (selfData.requestPool.length !== 0) {
-        var temp = selfData.requestPool.shift(),sendData = ''
+        var temp = selfData.requestPool.shift(), sendData = '',tempHeader = {}
 
         // 赋值操作,将数据捆绑到原型上
         temp.callback_success = param.successEvent
@@ -470,17 +495,23 @@
 
         switch (param.contentType) {
           case '':
-            temp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded')
+            tempHeader['Content-Type'] = 'application/x-www-form-urlencoded'
             break
           case 'json':
-            temp.setRequestHeader('Content-Type', 'application/json')
-          case 'form':
-            temp.setRequestHeader('Content-Type', '')
+            tempHeader['Content-Type'] = 'application/json'
+            break
         }
+
+        //设置http协议的头部
+        tool.each(tool.MergeObject(tempHeader,initParam.requestHeader), function (item, index) {
+          temp.setRequestHeader(index, item)
+        });
 
         //发送请求
         temp.send(param.type === 'get' ? '' : sendData);
 
+
+        console.log(initParam)
       } else {
         // 没有请求，加载到待发送队列中
         selfData.queuePool.push(param)
@@ -555,6 +586,7 @@
 
       //设置http协议的头部
       tool.each(ajaxSetting.requestHeader, function (item, index) {
+        console.warn(index)
         xhr.setRequestHeader(index, item)
       });
 
@@ -572,25 +604,15 @@
               this.callback_success ?
                 this.callback_success(ajaxSetting.transformResponse(this.response)) :
                 ajaxSetting.successEvent(ajaxSetting.transformResponse(this.response));
-
-
-              // ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.response));
             } else {
               this.callback_success ?
                 this.callback_success(ajaxSetting.transformResponse(JSON.parse(this.responseText))) :
                 ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(this.responseText)));
-              // ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(xhr.responseText)));
             }
           } else {
             this.callback_success ?
               this.callback_success(ajaxSetting.transformResponse(this.response)) :
               ajaxSetting.successEvent(ajaxSetting.transformResponse(this.response));
-
-            // ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.response));
-          }
-
-          if (ajaxSetting.pool.isOpen) {
-            tool.responseOver(this)
           }
         } else {
           /*
@@ -601,7 +623,20 @@
           this.callback_error ?
             this.callback_error(e.currentTarget.status, e.currentTarget.statusText) :
             ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
-          // ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
+
+          // 请求错误搜集
+          tool.uploadAjaxError({
+            type: 'request',
+            errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
+            errUrl: this.currentUrl,
+            errLine: this.status,
+            Browser: navigator.userAgent
+          })
+        }
+
+        // 生命周期结束之后返回数据池，不绑定状态（是否为成功或失败状态）
+        if (ajaxSetting.pool.isOpen) {
+          tool.responseOver(this)
         }
       };
 
@@ -609,7 +644,6 @@
       xhr.onreadystatechange = function () {
         switch (this.readyState) {
           case 1://打开
-            // debugger
             //do something
             break;
           case 2://获取header
@@ -631,18 +665,23 @@
                     this.callback_success(ajaxSetting.transformResponse(this.responseText)) :
                     ajaxSetting.successEvent(ajaxSetting.transformResponse(this.responseText))
                 }
+              }else{
+                // 请求错误搜集
+                tool.uploadAjaxError({
+                  type: 'request',
+                  errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
+                  errUrl: this.currentUrl,
+                  errLine: this.status,
+                  Browser: navigator.userAgent
+                })
               }
             }
 
-            if (/(^4.+)|(^5.+)/.test(this.status)) {
-              // 请求错误搜集
-              tool.uploadAjaxError({
-                type: 'request',
-                errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
-                errUrl: this.currentUrl,
-                errLine: this.status,
-                Browser: navigator.userAgent
-              })
+            if (this.status === 0) {
+              // 发送不存在请求，将不会走onload，直接这里就挂了，请求归还请求池
+              if (ajaxSetting.pool.isOpen) {
+                tool.responseOver(this)
+              }
             }
             break;
         }
@@ -686,14 +725,30 @@
         xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
       } else {
         selfData.xhr = xhr
+        window.xhr = xhr
+        // xhr.send()
       }
 
     },
+    look() {
+      console.warn('请求池数量：', selfData.requestPool.length)
+    },
     //设置ajax全局配置文件
     config: function (config) {
-      tool.MergeObject(initParam, config)
+      // 深度拷贝且检查过没有错误的对象
+      var temp = tool.checkParam(config)
+      tool.MergeObject(initParam, temp)
+      console.log(initParam)
       if (initParam.errStatus.isOpenErr) {
         tool.setOnerror();
+      }
+
+      if (initParam.pool.isOpen) {
+        // 清空请求池+排队队列
+        selfData.requestPool = []
+        selfData.queuePool = []
+        // 重新建立请求池
+        tool.createPool()
       }
     },
     //异步get请求

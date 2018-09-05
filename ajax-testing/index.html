@@ -8,6 +8,7 @@
 <body>
 测试页面勿怪
 <button onclick="f()">测试</button>
+<button onclick="r()">查看请求池请求数量</button>
 </body>
 </html>
 <script>
@@ -43,21 +44,28 @@
   // })
 
 
-  ajax.longPolling('post','http://localhost:3000/post',{name:'gerry'},function (data,that) {
-    num++
-    console.log('receive:',data)
-    if (num === 5) {
-      that.stop = true
-    }
-  },2000)
+  // ajax.longPolling('post','http://localhost:3000/post',{name:'gerry'},function (data,that) {
+  //   num++
+  //   console.log('receive:',data)
+  //   if (num === 1) {
+  //     that.stop = true
+  //   }
+  // },2000)
 
 
   function f() {
-    console.time("")
-    ajax.post(`http://localhost:3000/post?3000`,{a:new Date().getTime()},function (res) {
+    ajax.post(`http://localhost:3000/post`,{a:new Date().getTime()},function (res) {
       console.log('我获取到：',res)
     })
-    console.timeEnd("")
+  }
+
+  function r() {
+    // ajax.look()
+    ajax.config({
+      requestHeader:{
+        'shopID':'123'
+      }
+    })
   }
 
   // console.time('优化之后时间：')
