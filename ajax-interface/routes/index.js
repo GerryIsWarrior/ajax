@@ -1,33 +1,44 @@
 var express = require('express');
 var router = express.Router();
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-  res.header("Access-Control-Allow-Credentials", true)
-  res.header("Access-Control-Allow-Origin", "*")
-  res.header("Access-Control-Allow-Headers", "X-Requested-With,shopID")
-  res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS")
-  res.header("X-Powered-By", ' 3.2.1')
-  res.header("Content-Type", "application/json;charset=utf-8")
-  next()
-});
+var multipart = require('connect-multiparty');
+var multipartMiddleware = multipart();
 
-router.post('/post', function(req, res) {
-  // JSON.parse('a')
-  // setTimeout(function () {
-  //   res.send({ message: 'ok' });
-  // },10000)
-
-  res.send({ message: 'ok' });
-});
-
-router.post('/postOther', function(req, res) {
-  res.send('我是postOther')
-});
 
 router.get('/get', function(req, res) {
-  res.send('我是get')
+  let temp = req.query.data
+  res.send({data:temp})
+});
+
+
+router.post('/post', function(req, res) {
+  let temp = req.body
+  console.log(temp)
+  res.send(temp);
+});
+
+router.post('/postJSON', function(req, res) {
+  let temp = req.body
+  console.log(temp)
+  res.send(temp);
+});
+
+router.post('/postFormData',multipartMiddleware, function(req, res) {
+  let temp = req.body
+  console.log(temp)
+  res.send(temp);
+});
+
+router.post('/postBlob', function(req, res) {
+  var fs = require("fs");
+  fs.readFile('./public/aixin.jpg',function(err,data){
+    if(err){
+      console.log(err);
+    }else{
+      console.log(data.toString());
+      res.send(data);
+    }
+  });
 });
 
 module.exports = router;
