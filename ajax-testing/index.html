@@ -13,17 +13,17 @@
 </html>
 <script>
 
-  var formData = new FormData()
-  formData.append('a','gerry')
+  // var formData = new FormData()
+  // formData.append('a','gerry')
   var num = 0
 
-  // for (var i = 0; i < 100; i++) {
-  //   console.time("")
-  //   ajax.post(`http://localhost:3000/post?3000`,{a:new Date().getTime()},function (res) {
-  //     console.log('我获取到：',res)
-  //   })
-  //   console.timeEnd("")
-  // }
+  for (var i = 0; i < 10; i++) {
+    console.time("")
+    ajax.post('http://localhost:3000/post',{a:new Date().getTime()},function (res) {
+      console.log('我获取到：',res)
+    })
+    console.timeEnd("")
+  }
 
   // var qqq = 0
   // var temp = setInterval(function () {
@@ -54,13 +54,13 @@
 
 
   function f() {
-    ajax.post(`http://localhost:3000/post`,{a:new Date().getTime()},function (res) {
+    ajax.post('http://localhost:3000/post',{a:new Date().getTime()},function (res) {
       console.log('我获取到：',res)
     })
   }
 
   function r() {
-    // ajax.look()
+    ajax.look()
     ajax.config({
       requestHeader:{
         'shopID':'123'
