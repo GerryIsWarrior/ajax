@@ -447,7 +447,7 @@
         onload: true,
         onreadystatechange: true,
         ontimeout: true,
-        responseType: true,          // IE系列只有open连接之后才支持覆盖
+        // responseType: true,          // IE系列只有open连接之后才支持覆盖
         timeout: true,               // IE系列只有open连接之后才支持覆盖
         withCredentials: true,
         xhr_ie8: true
@@ -456,17 +456,13 @@
 
       for (var key in data) {
         if (mapping[key]) {
-          if (isNaN(tool.getIEVersion()) && ( key !== 'timeout' || key !== 'responseType')) {
+          if (!isNaN(tool.getIEVersion()) &&  key !== 'timeout') {
             temp[key] = data[key]
           }else{
             var newKey = '_'+key
             temp[newKey] = data[key]
           }
         }
-      }
-
-      if (!isNaN(tool.getIEVersion())) {
-
       }
 
       for (var i = 0; i < requestNum; i++) {
@@ -487,6 +483,11 @@
       // 判断请求池中是否有可用请求
       if (selfData.requestPool.length !== 0) {
         var temp = selfData.requestPool.shift(), sendData = '', tempHeader = {}
+        // 赋值操作,将数据捆绑到原型上
+        temp.callback_success = param.successEvent
+        temp.callback_error = param.errorEvent
+        temp.callback_timeout = param.timeoutEvent
+        temp.data = param.data
 
         // 处理参数
         switch (param.contentType) {
@@ -516,11 +517,6 @@
           temp.open(param.type, tool.checkRealUrl(param.url, temp))
         }
 
-        // 赋值操作,将数据捆绑到原型上
-        temp.callback_success = param.successEvent
-        temp.callback_error = param.errorEvent
-        temp.callback_timeout = param.timeoutEvent
-        temp.data = param.data
         param.responseType ? (temp.responseType = param.responseType):null
 
         if (!isNaN(tool.getIEVersion())) {
@@ -773,7 +769,6 @@
       // 深度拷贝且检查过没有错误的对象
       var temp = tool.checkParam(config)
       tool.MergeObject(initParam, temp)
-      console.log(initParam)
       if (initParam.errStatus.isOpenErr) {
         tool.setOnerror();
       }
