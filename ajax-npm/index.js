@@ -450,6 +450,7 @@
       }
 
       xhr.responseType = ajaxSetting.responseType;
+      xhr.withCredentials = ajaxSetting.withCredentials;
 
       //设置超时时间（只有异步请求才有超时时间）
       ajaxSetting.async ? (xhr.timeout = ajaxSetting.timeout) : (null);
