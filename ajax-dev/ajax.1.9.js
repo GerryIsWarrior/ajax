@@ -50,7 +50,7 @@
     },
     // 请求池
     pool: {
-      isOpen: false,
+      isOpen: true,
       requestNumber: 6,
     },
 
@@ -447,6 +447,7 @@
         onload: true,
         onreadystatechange: true,
         ontimeout: true,
+        // responseType:true,
         timeout: true,               // IE系列只有open连接之后才支持覆盖
         withCredentials: true,
         xhr_ie8: true
@@ -455,7 +456,7 @@
 
       for (var key in data) {
         if (mapping[key]) {
-          if (!isNaN(tool.getIEVersion()) && key !== 'timeout') {
+          if (isNaN(tool.getIEVersion()) && key !== 'timeout') {
             temp[key] = data[key]
           } else {
             var newKey = '_' + key
@@ -754,8 +755,6 @@
         xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
       } else {
         selfData.xhr = xhr
-        window.xhr = xhr
-        // xhr.send()
       }
 
     },

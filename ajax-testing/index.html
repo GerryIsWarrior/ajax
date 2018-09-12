@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>测试</title>
   <script src="../ajax-dev/ajax.1.9.js"></script>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <style>
 
     </style>
@@ -22,6 +23,14 @@
 
 <div>
     <strong>打开控制台查看连接池测试</strong>
+  <button onclick="sendReq10()">测试10</button>
+  <button onclick="sendReq100()">测试100</button>
+  <button onclick="sendReq1000()">测试1000</button>
+  <button onclick="sendReq5000()">测试5000</button>
+  <button onclick="jquerysendReq10()">jquery测试10</button>
+  <button onclick="jquerysendReq100()">jquery测试100</button>
+  <button onclick="jquerysendReq1000()">jquery测试1000</button>
+  <button onclick="jquerysendReq5000()">jquery测试5000</button>
 </div>
 </body>
 </html>
@@ -76,16 +85,84 @@
 </script>
 <script>
 
-  // var formData = new FormData()
-  // formData.append('a','gerry')
-  var num = 0
+  function sendReq10() {
+    for (var i = 0; i < 10; i++) {
+      console.time("")
+      ajax.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+    }
+  }
 
-  for (var i = 0; i < 100; i++) {
-    console.time("")
-    ajax.post('http://localhost:3000/post',{a:new Date().getTime()},function (res) {
-      console.log('我获取到：',res)
-    })
-    console.timeEnd("")
+  function sendReq100() {
+    for (var i = 0; i < 100; i++) {
+      console.time("")
+      ajax.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+    }
+  }
+
+  function sendReq1000() {
+    for (var i = 0; i < 1000; i++) {
+      console.time("")
+      ajax.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+    }
+  }
+
+  function sendReq5000() {
+    for (var i = 0; i < 5000; i++) {
+      console.time("")
+      ajax.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+    }
+  }
+
+  function jquerysendReq10() {
+    for (var i = 0; i < 10; i++) {
+      console.time("")
+      $.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+    }
+  }
+
+  function jquerysendReq100() {
+    for (var i = 0; i < 100; i++) {
+      console.time("")
+      $.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+    }
+  }
+
+  function jquerysendReq1000() {
+    for (var i = 0; i < 1000; i++) {
+      console.time("")
+      $.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+    }
+  }
+
+  function jquerysendReq5000() {
+    for (var i = 0; i < 5000; i++) {
+      console.time("")
+      $.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+    }
   }
 
   // var qqq = 0
