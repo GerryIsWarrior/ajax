@@ -14,14 +14,16 @@
  *                  --1.6   集成promise规范，更优雅的操作异步
  *                  --1.7   新增ajax的全局配置、对请求参数拓展和重构、对初始化参数类型检查（非正确格式则恢复默认）、增加浏览器错误回收机制、增加请求blob类型、增加跨域传递凭证配置
  *                  --1.8   增加请求错误监控、前端负载均衡、宕机切换、以及迭代问题修复
+ *                  --1.9   设计请求连接池，让通信更快一点，以及一些迭代的优化
  */
 (function () {
 
   var root = this
+
   //默认参数
   var initParam = {
     url: "",
-    type: "",
+    type: "post",
     baseURL: '',
     data: {},
     async: true,
@@ -46,9 +48,13 @@
       isOpen: false,
       // 切换策略
       strategies: function () {
-
       },
-      backupUrl: ''
+      backupUrl: '',
+    },
+    // 请求池
+    pool: {
+      isOpen: false,
+      requestNumber: 6,
     },
 
     transformRequest: function (data) {
@@ -63,8 +69,25 @@
     },
     timeoutEvent: function (code, e) {
     }
+  };
+  // 原型方法兼容
+  Array.prototype.indexOf = function (data) {
+    if (Array.indexOf) {
+      return Array.indexOf
+    } else {
+      if (JSON.stringify(data) === '{}' || data.length === 0) {
+        return -1
+      } else {
+        for (var key in this[0]) {
+          if (this[0][key] === data) {
+            return key
+          } else {
+            return -1
+          }
+        }
+      }
+    }
   }
-
   //初始化参数固定类型检查
   var initParamType = {
     url: "String",
@@ -81,22 +104,25 @@
     errStatus: 'Object',
     loadBalancing: 'Object',
     serviceSwitching: 'Object',
+    pool: 'Object',
     transformRequest: 'function',
     transformResponse: 'function',
     successEvent: 'function',
     errorEvent: 'function',
     timeoutEvent: 'function'
-  }
-
+  };
   // 内部使用数据
   var selfData = {
     errAjax: {},
-    isNeedSwitching: false
+    isNeedSwitching: false,
+    requestPool: [],   // 请求池
+    queuePool: [],
+    xhr: {}
   }
 
   //内部使用工具
   var tool = {
-    random(max, min) {
+    random: function (max, min) {
       return Math.floor(Math.random() * (max - min + 1) + min)
     },
     hasOwn: function (obj, key) {
@@ -169,6 +195,34 @@
       }
       return target;
     },
+    // 深度拷贝对象
+    deepClone: function (data) {
+      var obj = null, originQueue = [data], visitQueue = [], copyVisitQueue = []
+      tool.is.Array(originQueue[0]) ? obj = [] : obj = {}
+      var copyQueue = [obj];
+      while (originQueue.length > 0) {
+        var _data = originQueue.shift();
+        var _obj = copyQueue.shift();
+        visitQueue.push(_data);
+        copyVisitQueue.push(_obj);
+        for (var key in _data) {
+          var _value = _data[key]
+          if (typeof _value !== 'object') {
+            _obj[key] = _value;
+          } else {
+            var index = visitQueue.indexOf(_value)
+            if (index > -1) {
+              _obj[key] = copyVisitQueue[index];
+            } else {
+              originQueue.push(_value);
+              tool.is.Array(_value) ? _obj[key] = [] : _obj[key] = {}
+              copyQueue.push(_obj[key]);
+            }
+          }
+        }
+      }
+      return obj;
+    },
     //创建xhr对象
     createXhrObject: function () {
       var xhr;
@@ -183,13 +237,10 @@
     },
     //检查初始化参数
     checkParam: function (options) {
-      var temp = {};
-      tool.MergeObject(temp, initParam);
-      //解决深度拷贝引用地址问题
-      temp.data = JSON.parse(JSON.stringify(temp.data))
-      temp.requestHeader = JSON.parse(JSON.stringify(temp.requestHeader))
-      temp.publicData = JSON.parse(JSON.stringify(temp.publicData))
+      // 升级深度拷贝丑陋的写法
+      var temp = tool.deepClone(initParam);
       tool.MergeObject(temp, options);
+
       return tool.checkDataTypeBatch(temp, initParamType) ? temp : {};
     },
     /*
@@ -201,38 +252,36 @@
      *
      *
      */
-    checkRealUrl: function (param, that) {
-      var temp;
-      if (/http:\/\/|https:\/\//.test(param.url)) {
-        temp = param.url;
+    checkRealUrl: function (url, that) {
+      if (/http:\/\/|https:\/\//.test(url)) {
         // 针对请求，负载均衡到配置域名  PS:负载均衡优先级 > 宕机切换优先级
-        if (param.errStatus.errURL !== temp) { // 错误搜集接口都不走
-          if (param.loadBalancing.isOpen) {  // 负载打开肯定走负载
-            temp = param.url.replace(/^(http:\/\/|https:\/\/)/, '')
-              .replace(/^.*?\//, param.loadBalancing.cluster[tool.random(param.loadBalancing.cluster.length - 1, 0)] + '/$`')
+        if (initParam.errStatus.errURL !== url) { // 错误搜集接口都不走
+          if (initParam.loadBalancing.isOpen) {  // 负载打开肯定走负载
+            url = url.replace(/^(http:\/\/|https:\/\/)/, '')
+              .replace(/^.*?\//, initParam.loadBalancing.cluster[tool.random(initParam.loadBalancing.cluster.length - 1, 0)] + '/$`')
           } else {
             // 如果负载没开，宕机切换打开，则走介个
-            if (param.serviceSwitching.isOpen && selfData.isNeedSwitching) {
-              temp = param.url.replace(/^(http:\/\/|https:\/\/)/, '')
-                .replace(/^.*?\//, param.serviceSwitching.backupUrl + '/$`')
+            if (initParam.serviceSwitching.isOpen && selfData.isNeedSwitching) {
+              url = url.replace(/^(http:\/\/|https:\/\/)/, '')
+                .replace(/^.*?\//, initParam.serviceSwitching.backupUrl + '/$`')
             }
           }
         }
       } else {
-        temp = param.baseURL + param.url
-        if (param.errStatus.errURL !== temp) {
-          if (param.loadBalancing.isOpen) {
-            temp = param.loadBalancing.cluster[tool.random(param.loadBalancing.cluster.length - 1, 0)] + param.baseURL + param.url
+        url = initParam.baseURL + url
+        if (initParam.errStatus.errURL !== url) {
+          if (initParam.loadBalancing.isOpen) {
+            url = initParam.loadBalancing.cluster[tool.random(initParam.loadBalancing.cluster.length - 1, 0)] + initParam.baseURL + url
           } else {
             // 如果负载没开，宕机切换打开，宕机策略成功则走介个
-            if (param.serviceSwitching.isOpen && selfData.isNeedSwitching) {
-              temp = param.serviceSwitching.backupUrl + param.baseURL + param.url
+            if (initParam.serviceSwitching.isOpen && selfData.isNeedSwitching) {
+              url = initParam.serviceSwitching.backupUrl + initParam.baseURL + url
             }
           }
         }
       }
-      that.currentUrl = temp
-      return temp;
+      that.currentUrl = url
+      return url;
     },
     //批量检查数据类型
     checkDataTypeBatch: function (obj, objType) {
@@ -278,7 +327,7 @@
       for (var i = 0; i < count; i++) {
         fileArr.push({
           name: file.name + ".part" + (i + 1),
-          file: file.slice(cutSize * i, cutSize * ( i + 1 ))
+          file: file.slice(cutSize * i, cutSize * (i + 1))
         });
       }
       ;
@@ -374,7 +423,6 @@
     },
     //监控ajax请求的错误日志
     uploadAjaxError: function (obj) {
-      // debugger
       if (initParam.errStatus.isOpenErr) {
         if (obj.errUrl !== initParam.errStatus.errURL) {
           tempObj.post(initParam.errStatus.errURL, obj)
@@ -393,13 +441,123 @@
         selfData.isNeedSwitching = initParam.serviceSwitching.strategies(selfData.errAjax)
       }
 
-    }
-  }
+    },
+    // 拷贝xhr参数
+    deepCloneXhr: function (data, requestNum) {
+      var mapping = {
+        currentUrl: true,
+        onerror: true,
+        onload: true,
+        onreadystatechange: true,
+        ontimeout: true,
+        timeout: true,               // IE系列只有open连接之后才支持覆盖
+        withCredentials: true,
+        xhr_ie8: true
+      }
+      var temp = {}
 
+      for (var key in data) {
+        if (mapping[key]) {
+          if (!isNaN(tool.getIEVersion()) && key !== 'timeout') {
+            temp[key] = data[key]
+          } else {
+            var newKey = '_' + key
+            temp[newKey] = data[key]
+          }
+        }
+      }
+
+      for (var i = 0; i < requestNum; i++) {
+        var nullRequest = tool.createXhrObject()
+        tool.MergeObject(nullRequest, temp)
+        selfData.requestPool.push(nullRequest)
+      }
+    },
+    // 创建请求池中链接
+    createPool: function () {
+      // IE 系列不支持发送请求传''，所以默认/
+      tempObj.common({url: '/'}, true)
+      tool.deepCloneXhr(selfData.xhr, initParam.pool.requestNumber)
+    },
+    // 请求池申请请求使用
+    useRequestPool: function (param) {
+      // 判断请求池中是否有可用请求
+      if (selfData.requestPool.length !== 0) {
+        var temp = selfData.requestPool.shift(), sendData = '', tempHeader = {}
+        // 赋值操作,将数据捆绑到原型上
+        temp.callback_success = param.successEvent
+        temp.callback_error = param.errorEvent
+        temp.callback_timeout = param.timeoutEvent
+        temp.data = param.data
+
+        // 处理参数
+        switch (param.contentType) {
+          case '':
+            tool.each(tool.MergeObject(param.data, initParam.publicData), function (item, index) {
+              sendData += (index + "=" + item + "&")
+            });
+            sendData = sendData.slice(0, -1);
+            break
+          case 'json':
+            sendData = JSON.stringify(tool.MergeObject(param.data, initParam.publicData))
+            break
+          case 'form':
+            if (!tool.isEmptyObject(initParam.publicData)) {
+              tool.each(initParam.publicData, function (item, index) {
+                param.data.append(index, item)
+              })
+            }
+            sendData = param.data
+            break
+        }
+
+        //判断请求类型
+        if (param.type === 'get') {
+          temp.open(param.type, tool.checkRealUrl(param.url, temp) + (sendData === '' ? '' : ('?' + sendData)))
+        } else {
+          temp.open(param.type, tool.checkRealUrl(param.url, temp))
+        }
+
+        param.responseType ? (temp.responseType = param.responseType) : null
+
+        if (!isNaN(tool.getIEVersion())) {
+          temp.timeout = temp._timeout
+        }
+
+        switch (param.contentType) {
+          case '':
+            tempHeader['Content-Type'] = 'application/x-www-form-urlencoded'
+            break
+          case 'json':
+            tempHeader['Content-Type'] = 'application/json'
+            break
+        }
+
+        //设置http协议的头部
+        tool.each(tool.MergeObject(tempHeader, initParam.requestHeader), function (item, index) {
+          temp.setRequestHeader(index, item)
+        });
+
+        //发送请求
+        temp.send(param.type === 'get' ? '' : sendData);
+      } else {
+        // 没有请求，加载到待发送队列中
+        selfData.queuePool.push(param)
+      }
+    },
+    // 请求周期结束操作
+    responseOver: function (xhr) {
+      selfData.requestPool.push(xhr)
+      if (selfData.queuePool.length > 0) {
+        var tempData = selfData.queuePool.shift()
+        tool.useRequestPool(tempData)
+      }
+    }
+  };
   //抛出去给外部使用的方法
   var tempObj = {
     //通用ajax
-    common: function (options) {
+    common: function (options, isCreatePoll) {
       //每次清空请求缓存,并重新合并对象
       var ajaxSetting = tool.checkParam(options),
         sendData = '';
@@ -434,6 +592,7 @@
               })
             }
             sendData = ajaxSetting.data
+            // ajaxSetting.requestHeader['Content-Type'] = 'multipart/form-data'
             break
         }
         //请求前处理参数
@@ -441,9 +600,9 @@
 
         //判断请求类型
         if (ajaxSetting.type === 'get') {
-          xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting, xhr) + '?' + sendData, ajaxSetting.async)
+          xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, xhr) + '?' + sendData, ajaxSetting.async)
         } else {
-          xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting, xhr), ajaxSetting.async)
+          xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, xhr))
         }
       } else {
         xhr.open(ajaxSetting.type, ajaxSetting.baseURL + ajaxSetting.url, ajaxSetting.async)
@@ -459,20 +618,29 @@
         xhr.setRequestHeader(index, item)
       });
 
+      // 是否允许传输跨域凭证
+      xhr.withCredentials = ajaxSetting.withCredentials
+
       //onload事件（IE8下没有该事件）
       xhr.onload = function (e) {
-        if (this.status == 200 || this.status == 304) {
+        if (this.readyState === 4 && (this.status == 200 || this.status == 304)) {
           /*
-          *  ie浏览器全系列不支持responseType='json'，所以在ie下使用JSON.parse进行转换
+          *  ie浏览器全系列不支持responseType='json'和response取值，所以在ie下使用JSON.parse进行转换
           * */
-          if (ajaxSetting.responseType === 'json') {
-            if (isNaN(tool.getIEVersion())) {
-              ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.response));
+          if (!isNaN(tool.getIEVersion())) {
+            if (this.responseType === 'json') {
+              this.callback_success ?
+                this.callback_success(ajaxSetting.transformResponse(JSON.parse(this.responseText))) :
+                ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(this.responseText)));
             } else {
-              ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(xhr.responseText)));
+              this.callback_success ?
+                this.callback_success(ajaxSetting.transformResponse(this.responseText)) :
+                ajaxSetting.successEvent(ajaxSetting.transformResponse(this.responseText));
             }
           } else {
-            ajaxSetting.successEvent(ajaxSetting.transformResponse(xhr.response));
+            this.callback_success ?
+              this.callback_success(ajaxSetting.transformResponse(this.response)) :
+              ajaxSetting.successEvent(ajaxSetting.transformResponse(this.response));
           }
         } else {
           /*
@@ -480,13 +648,29 @@
            *   如果跨域请求在IE8、9下跨域失败不走onerror方法
            *       其他支持了Level 2 的版本 直接走onerror
            * */
-          ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
+          this.callback_error ?
+            this.callback_error(e.currentTarget.status, e.currentTarget.statusText) :
+            ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
+
+          // 请求错误搜集
+          tool.uploadAjaxError({
+            type: 'request',
+            errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
+            errUrl: this.currentUrl,
+            errLine: this.status,
+            Browser: navigator.userAgent
+          })
+        }
+
+        // 生命周期结束之后返回数据池，不绑定状态（是否为成功或失败状态）
+        if (ajaxSetting.pool.isOpen) {
+          tool.responseOver(this)
         }
       };
 
       //xmlhttprequest每次变化一个状态所监控的事件（可拓展）
       xhr.onreadystatechange = function () {
-        switch (xhr.readyState) {
+        switch (this.readyState) {
           case 1://打开
             //do something
             break;
@@ -498,23 +682,38 @@
             break;
           case 4://完成
             //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
-            if (xhr.xhr_ie8) {
-              if (xhr.status == 200 || xhr.status == 304) {
-                if (ajaxSetting.responseType == "json") {
-                  ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(xhr.responseText)))
+            if (this.xhr_ie8) {
+              if (this.status === 200 || this.status === 304) {
+                if (this.responseType == "json") {
+                  this.callback_success ?
+                    this.callback_success(ajaxSetting.transformResponse(JSON.parse(this.responseText))) :
+                    ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(this.responseText)))
+                } else {
+                  this.callback_success ?
+                    this.callback_success(ajaxSetting.transformResponse(this.responseText)) :
+                    ajaxSetting.successEvent(ajaxSetting.transformResponse(this.responseText))
+                }
+              } else {
+                // 请求错误搜集
+                tool.uploadAjaxError({
+                  type: 'request',
+                  errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
+                  errUrl: this.currentUrl,
+                  errLine: this.status,
+                  Browser: navigator.userAgent
+                })
+              }
+              // 针对IE8 请求池处理
+              if (ajaxSetting.pool.isOpen) {
+                tool.responseOver(this)
+              }
+            } else {
+              if (this.status === 0) {
+                // 发送不存在请求，将不会走onload，直接这里就挂了，请求归还请求池
+                if (ajaxSetting.pool.isOpen) {
+                  tool.responseOver(this)
                 }
               }
-            }
-
-            if (/(^4.+)|(^5.+)/.test(xhr.status)) {
-              // 请求错误搜集
-              tool.uploadAjaxError({
-                type: 'request',
-                errInfo: JSON.stringify(ajaxSetting.data),
-                errUrl: this.currentUrl,
-                errLine: xhr.status,
-                Browser: navigator.userAgent
-              })
             }
             break;
         }
@@ -523,12 +722,14 @@
 
       //ontimeout超时事件
       xhr.ontimeout = function (e) {
-        ajaxSetting.timeoutEvent("000000", e ? (e.type) : ("timeoutEvent"));   //IE8 没有e参数
-        xhr.abort();  //关闭请求
+        this.callback_timeout ?
+          this.callback_timeout("000000", e ? (e.type) : ("timeoutEvent")) :
+          ajaxSetting.timeoutEvent("000000", e ? (e.type) : ("timeoutEvent"));   //IE8 没有e参数
+        this.abort();  //关闭请求
         // 请求错误搜集
         tool.uploadAjaxError({
           type: 'request',
-          errInfo: JSON.stringify(ajaxSetting.data),
+          errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
           errUrl: this.currentUrl,
           errLine: 'timeout',
           Browser: navigator.userAgent
@@ -537,26 +738,45 @@
 
       //错误事件，直接ajax失败，而不走onload事件
       xhr.onerror = function (e, x, xx, xxx, xxxx) {
-        ajaxSetting.errorEvent(e)
+        this.callback_error ?
+          this.callback_error(e) :
+          ajaxSetting.errorEvent(e)
 
         // 请求错误搜集
         tool.uploadAjaxError({
           type: 'request',
-          errInfo: JSON.stringify(ajaxSetting.data),
+          errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
           errUrl: this.currentUrl,
           errLine: 'RequestErr',
           Browser: navigator.userAgent
         })
       };
 
-      //发送请求
-      xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
+      if (!isCreatePoll) {
+        //发送请求
+        xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
+      } else {
+        selfData.xhr = xhr
+        window.xhr = xhr
+        // xhr.send()
+      }
+
     },
     //设置ajax全局配置文件
     config: function (config) {
-      tool.MergeObject(initParam, config)
+      // 深度拷贝且检查过没有错误的对象
+      var temp = tool.checkParam(config)
+      tool.MergeObject(initParam, temp)
       if (initParam.errStatus.isOpenErr) {
         tool.setOnerror();
+      }
+
+      if (initParam.pool.isOpen) {
+        // 清空请求池+排队队列
+        selfData.requestPool = []
+        selfData.queuePool = []
+        // 重新建立请求池
+        tool.createPool()
       }
     },
     //异步get请求
@@ -565,11 +785,16 @@
         type: "get",
         url: url,
         data: data,
+        contentType: '',
         successEvent: successEvent,
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      tempObj.common(ajaxParam);
+      if (initParam.pool.isOpen) {
+        tool.useRequestPool(ajaxParam)
+      } else {
+        tempObj.common(ajaxParam);
+      }
     },
     //异步post请求
     post: function (url, data, successEvent, errorEvent, timeoutEvent) {
@@ -582,7 +807,12 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      tempObj.common(ajaxParam);
+
+      if (initParam.pool.isOpen) {
+        tool.useRequestPool(ajaxParam)
+      } else {
+        tempObj.common(ajaxParam);
+      }
     },
     //异步post请求
     postJSON: function (url, data, successEvent, errorEvent, timeoutEvent) {
@@ -595,7 +825,11 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      tempObj.common(ajaxParam);
+      if (initParam.pool.isOpen) {
+        tool.useRequestPool(ajaxParam)
+      } else {
+        tempObj.common(ajaxParam);
+      }
     },
     //异步post请求
     postFormData: function (url, formData, successEvent, errorEvent, timeoutEvent) {
@@ -608,7 +842,11 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      tempObj.common(ajaxParam);
+      if (initParam.pool.isOpen) {
+        tool.useRequestPool(ajaxParam)
+      } else {
+        tempObj.common(ajaxParam);
+      }
     },
     //获取blob数据集
     obtainBlob: function (type, url, data, successEvent, errorEvent, timeoutEvent) {
@@ -621,7 +859,11 @@
         errorEvent: errorEvent,
         timeoutEvent: timeoutEvent
       };
-      tempObj.common(ajaxParam);
+      if (initParam.pool.isOpen) {
+        tool.useRequestPool(ajaxParam)
+      } else {
+        tempObj.common(ajaxParam);
+      }
     },
     //集成promise的ajax请求(默认设置post和get请求，如有其他需求，可自己拓展)
     promiseAjax: function (url, data, type) {
@@ -646,6 +888,8 @@
         type: type,
         url: url,
         data: data,
+        contentType: 'json',
+        responseType: '',
         successEvent: function (dateCall) {
           successEvent(dateCall, this);
           if (!this.stop) {
@@ -664,7 +908,12 @@
           }, timeFrequency);
         }
       };
-      tempObj.common(ajaxParam);
+
+      if (initParam.pool.isOpen) {
+        tool.useRequestPool(ajaxParam)
+      } else {
+        tempObj.common(ajaxParam);
+      }
     },
     /*
      *   ajax上传文件 -- level2的新特性，请保证你的项目支持新的特性再使用
@@ -716,16 +965,7 @@
 
       if (result.status !== undefined) return result;   //如果有错误信息直接抛出去,结束运行
 
-      var ajaxParam = {
-        type: "post",
-        url: url,
-        data: formdata,
-        contentType: 'form',
-        successEvent: successEvent,
-        errorEvent: errorEvent,
-        timeoutEvent: timeoutEvent
-      };
-      tempObj.common(ajaxParam);
+      tempObj.postFormData(url, formdata, successEvent, errorEvent, timeoutEvent)
     },
     /*
      *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用
@@ -770,19 +1010,11 @@
         fileForm.append("file".name, file[0]);
         fileForm.append("count", 1);
         fileForm.append("cutSize", cutSize);
-        var ajaxParam = {
-          type: "post",
-          url: url,
-          data: fileForm,
-          contentType: 'form',
-          successEvent: function (data) {
-            successEvent(data);
-            progressEvent(1, 1);
-          },
-          errorEvent: errorEvent,
-          timeoutEvent: timeoutEvent
-        };
-        tempObj.common(ajaxParam);
+
+        tempObj.postFormData(url, fileForm, function (data) {
+          successEvent(data);
+          progressEvent(1, 1);
+        }, errorEvent, timeoutEvent)
       }
       ;
 
@@ -811,48 +1043,46 @@
         formData.append("count", count);
         formData.append("cutSize", cutSize);
         ;
-        var ajaxParam = {
-          type: "post",
-          url: url,
-          data: formData,
-          contentType: 'form',
-          successEvent: function (data) {
-            /*
+
+        tempObj.postFormData(url, formData, function (data) {
+          /*
              *   data 参数设置  需要后台接口配合
              *       建议：如果后台成功保存.part文件，建议返回下次所需要的部分，比如当前发送count为0，则data返回下次为1。
              *             如果保存不成功，则可false，或者返回错误信息，可在successEvent中处理
              *
              * */
-            progressEvent(count + 1, fileArr.length);   //上传进度事件，第一个参数：当前上传次数；第二个参数：总共文件数
+          progressEvent(count + 1, fileArr.length);   //上传进度事件，第一个参数：当前上传次数；第二个参数：总共文件数
 
-            var currCount = Number(data);
-            if (currCount) {
-              if (currCount != fileArr.length) {
-                cutFile_upload(fileArr, currCount);
-              }
-              ;
+          var currCount = Number(data);
+          if (currCount) {
+            if (currCount != fileArr.length) {
+              cutFile_upload(fileArr, currCount);
             }
             ;
-            successEvent(data);  //成功处理事件
-          },
-          errorEvent: errorEvent,
-          timeoutEvent: timeoutEvent
-        };
-        tempObj.common(ajaxParam);
+          }
+          ;
+          successEvent(data);  //成功处理事件
+        }, errorEvent, timeoutEvent)
       }
     }
-  }
+  };
+
 
   var outputObj = function () {
     //虽然在IE6、7上可以支持，但是最好升级你的浏览器，毕竟xp已经淘汰，面向未来吧，骚年，和我一起努力吧！！
     if (tool.getIEVersion() < 7) {
-      //实在不想说：lowB，升级你的浏览器吧
-      throw new Error("Sorry,please upgrade your browser.(IE8+)");
-    } else {
-      tool.each(tempObj, function (value, key) {
-        root[key] = value
-      })
+      //实在不想说：升级你的浏览器吧
+      throw new Error("Sorry,please update your browser.(IE8+)");
     }
+
+    // 是否开启连接池
+    if (initParam.pool.isOpen) {
+      tool.createPool()
+    }
+
+    tool.each(tempObj, function (value, key) {
+      root[key] = value
+    })
   };
 
   new outputObj();

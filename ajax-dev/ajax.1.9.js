@@ -1,8 +1,8 @@
 /**
  * purpose：     ajax通用解决方案
  * author：      仲强
- * version:      1.8
- * date:         2018-06-29
+ * version:      1.9
+ * date:         2018-09-12
  * email:        gerry.zhong@outlook.com
  * update:          --1.1   去除跨域请求头部设置   ==> author: keepfool (cnblogs)
  *                  --1.2   更新tool方法，完善结构  ==> author: pod4g  (github)
@@ -14,6 +14,7 @@
  *                  --1.6   集成promise规范，更优雅的操作异步
  *                  --1.7   新增ajax的全局配置、对请求参数拓展和重构、对初始化参数类型检查（非正确格式则恢复默认）、增加浏览器错误回收机制、增加请求blob类型、增加跨域传递凭证配置
  *                  --1.8   增加请求错误监控、前端负载均衡、宕机切换、以及迭代问题修复
+ *                  --1.9   设计请求连接池，让通信更快一点，以及一些迭代的优化
  */
 (function (window) {
   //默认参数
@@ -44,13 +45,12 @@
       isOpen: false,
       // 切换策略
       strategies: function () {
-
       },
       backupUrl: '',
     },
     // 请求池
     pool: {
-      isOpen: true,
+      isOpen: false,
       requestNumber: 6,
     },
 
@@ -101,6 +101,7 @@
     errStatus: 'Object',
     loadBalancing: 'Object',
     serviceSwitching: 'Object',
+    pool: 'Object',
     transformRequest: 'function',
     transformResponse: 'function',
     successEvent: 'function',
@@ -113,7 +114,6 @@
     isNeedSwitching: false,
     requestPool: [],   // 请求池
     queuePool: [],
-    // usingQueue:[],
     xhr: {}
   }
 
@@ -439,7 +439,7 @@
       }
 
     },
-    // 深度拷贝对象
+    // 拷贝xhr参数
     deepCloneXhr: function (data, requestNum) {
       var mapping = {
         currentUrl: true,
@@ -447,7 +447,6 @@
         onload: true,
         onreadystatechange: true,
         ontimeout: true,
-        // responseType: true,          // IE系列只有open连接之后才支持覆盖
         timeout: true,               // IE系列只有open连接之后才支持覆盖
         withCredentials: true,
         xhr_ie8: true
@@ -456,10 +455,10 @@
 
       for (var key in data) {
         if (mapping[key]) {
-          if (!isNaN(tool.getIEVersion()) &&  key !== 'timeout') {
+          if (!isNaN(tool.getIEVersion()) && key !== 'timeout') {
             temp[key] = data[key]
-          }else{
-            var newKey = '_'+key
+          } else {
+            var newKey = '_' + key
             temp[newKey] = data[key]
           }
         }
@@ -468,7 +467,6 @@
       for (var i = 0; i < requestNum; i++) {
         var nullRequest = tool.createXhrObject()
         tool.MergeObject(nullRequest, temp)
-        // Object.assign(nullRequest, temp)
         selfData.requestPool.push(nullRequest)
       }
     },
@@ -478,7 +476,7 @@
       tempObj.common({url: '/'}, true)
       tool.deepCloneXhr(selfData.xhr, initParam.pool.requestNumber)
     },
-    // 请求使用
+    // 请求池申请请求使用
     useRequestPool: function (param) {
       // 判断请求池中是否有可用请求
       if (selfData.requestPool.length !== 0) {
@@ -517,7 +515,7 @@
           temp.open(param.type, tool.checkRealUrl(param.url, temp))
         }
 
-        param.responseType ? (temp.responseType = param.responseType):null
+        param.responseType ? (temp.responseType = param.responseType) : null
 
         if (!isNaN(tool.getIEVersion())) {
           temp.timeout = temp._timeout
@@ -760,9 +758,6 @@
         // xhr.send()
       }
 
-    },
-    look: function () {
-      console.warn('请求池数量：', selfData.requestPool)
     },
     //设置ajax全局配置文件
     config: function (config) {
@@ -1072,8 +1067,8 @@
   var outputObj = function () {
     //虽然在IE6、7上可以支持，但是最好升级你的浏览器，毕竟xp已经淘汰，面向未来吧，骚年，和我一起努力吧！！
     if (tool.getIEVersion() < 7) {
-      //实在不想说：lowB，升级你的浏览器吧
-      throw new Error("Sorry,please upgrade your browser.(IE8+)");
+      //实在不想说：升级你的浏览器吧
+      throw new Error("Sorry,please update your browser.(IE8+)");
     }
 
     // 是否开启连接池
