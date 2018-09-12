@@ -32,6 +32,18 @@
   <button onclick="jquerysendReq1000()">jquery测试1000</button>
   <button onclick="jquerysendReq5000()">jquery测试5000</button>
 </div>
+
+<div>
+    <strong>打开控制台查看连接池测试,每隔一秒发送请求</strong>
+    <button onclick="qsendReq10()">测试10</button>
+    <button onclick="qsendReq100()">测试100</button>
+    <button onclick="qsendReq1000()">测试1000</button>
+    <button onclick="qsendReq5000()">测试5000</button>
+    <button onclick="qjquerysendReq10()">jquery测试10</button>
+    <button onclick="qjquerysendReq100()">jquery测试100</button>
+    <button onclick="qjquerysendReq1000()">jquery测试1000</button>
+    <button onclick="qjquerysendReq5000()">jquery测试5000</button>
+</div>
 </body>
 </html>
 <script>
@@ -165,16 +177,127 @@
     }
   }
 
-  // var qqq = 0
-  // var temp = setInterval(function () {
-  //   if (qqq === 20) {
-  //     window.clearInterval(temp);
-  //   }
-  //   console.time("")
-  //   ajax.postFormData(`http://localhost:3000/post`,{a:new Date().getTime()},function (res) {
-  //     // console.log('获得相应：',res)
-  //   })
-  //   console.timeEnd("")
-  //   qqq++
-  // },1000)
+
+  // 以下测试为每隔一秒测试
+  function qsendReq10() {
+    var qqq = 0
+    var temp = setInterval(function () {
+      if (qqq === 10) {
+        window.clearInterval(temp);
+      }
+      console.time("")
+      ajax.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('获得相应：',res)
+      })
+      console.timeEnd("")
+      qqq++
+    },1000)
+  }
+
+  function qsendReq100() {
+    var qqq = 0
+    var temp = setInterval(function () {
+      if (qqq === 100) {
+        window.clearInterval(temp);
+      }
+      console.time("")
+      ajax.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('获得相应：',res)
+      })
+      console.timeEnd("")
+      qqq++
+    },1000)
+  }
+
+  function qsendReq1000() {
+    var qqq = 0
+    var temp = setInterval(function () {
+      if (qqq === 1000) {
+        window.clearInterval(temp);
+      }
+      console.time("")
+      ajax.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('获得相应：',res)
+      })
+      console.timeEnd("")
+      qqq++
+    },1000)
+  }
+
+  function qsendReq5000() {
+    var qqq = 0
+    var temp = setInterval(function () {
+      if (qqq === 5000) {
+        window.clearInterval(temp);
+      }
+      console.time("")
+      ajax.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('获得相应：',res)
+      })
+      console.timeEnd("")
+      qqq++
+    },1000)
+  }
+
+  function qjquerysendReq10() {
+    var qqq = 0
+    var temp = setInterval(function () {
+      if (qqq === 10) {
+        window.clearInterval(temp);
+      }
+      console.time("")
+      $.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+      qqq++
+    },1000)
+  }
+
+  function qjquerysendReq100() {
+    var qqq = 0
+    var temp = setInterval(function () {
+      if (qqq === 100) {
+        window.clearInterval(temp);
+      }
+      console.time("")
+      $.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+      qqq++
+    },1000)
+  }
+
+  function qjquerysendReq1000() {
+    var qqq = 0
+    var temp = setInterval(function () {
+      if (qqq === 1000) {
+        window.clearInterval(temp);
+      }
+      console.time("")
+      $.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+      qqq++
+    },1000)
+  }
+
+  function qjquerysendReq5000() {
+    var qqq = 0
+    var temp = setInterval(function () {
+      if (qqq === 5000) {
+        window.clearInterval(temp);
+      }
+      console.time("")
+      $.post('http://localhost:3000/post',{name:'test'},function (res) {
+        // console.log('我获取到：',res)
+      })
+      console.timeEnd("")
+      qqq++
+    },1000)
+  }
+
+
 </script>
