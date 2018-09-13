@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+  <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-gl/echarts-gl.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-stat/ecStat.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/dataTool.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/china.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/world.js"></script>
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=ZUONbpqGBsYGXNIYHicvbAbM"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/bmap.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/simplex.js"></script>
+<script type="text/javascript">
+  var dom = document.getElementById("container");
+  var myChart = echarts.init(dom);
+  var app = {};
+  option = null;
+  option = {
+    title: {
+      text: 'safari 10次请求测试（单位：微秒）'
+    },
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      data:['jquery.ajax','axios','ajax-js:close','ajax-js:open']
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    toolbox: {
+      feature: {
+        saveAsImage: {}
+      }
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      // data: ['周一','周二','周三','周四','周五','周六','周日']
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [
+      {
+        name:'jquery.ajax',
+        type:'line',
+        stack: '总量',
+        data:[3858,867,942,893,2356,993,850,848,813,846,699,692,737,728,748,710,3785,755,1247,693,757,706,749,733,755,736,653,1158,765,752,822,829,774,858,870,618,628,867,1753,10635,748,754,779,764,859,833,785,724,693,647,646,697,1505,953,686,563,898,715,631,3791,808,737,746,762,677,3759,1016,765,654,704,634,650,571,680,659,632,607,661,622,651,726,610,636,625,687,630,1423,652,910,720,600,625,1073,719,741,702,674,673,3825]
+
+
+      },
+      {
+        name:'axios',
+        type:'line',
+        stack: '总量',
+        data:[1259,414,286,203,157,131,150,140,190,161,145,164,124,102,89,93,100,117,90,117,146,101,92,267,96,88,91,98,88,105,85,90,110,348,145,111,10354,169,148,100,99,6380,220,107,96,115,160,113,97,109,86,91,76,79,88,83,93,68,70,77,104,134,80,139,221,78,210,91,103,84,126,77,90,66,82,134,84,103,145,185,169,125,133,165,95,78,83,109,93,79,107,95,83,68,196,96,63,88]
+
+      },
+      {
+        name:'ajax-js:close',
+        type:'line',
+        stack: '总量',
+        data:[3106,792,733,1199,1210,532,1667,740,1016,1221,631,1227,507,513,448,428,508,462,408,366,388,420,391,390,387,821,450,441,453,445,1180,506,406,2211,551,502,489,426,457,500,470,469,481,637,429,410,383,400,406,450,718,728,488,385,389,380,363,370,403,372,390,426,398,351,364,394,428,418,366,397,427,369,386,3665,479,444,418,436,408,354,385,400,424,394,380,843,8784,491,366,569,498,394,403,371,380,366,383,388,420]
+
+
+      },
+      {
+        name:'ajax-js:open',
+        type:'line',
+        stack: '总量',
+        data:[690,409,433,611,454,403,13,9,4,3,9,4,3,2,4,8,4,3,2,4,2,4,5,3,6,4,2,5,2,5,4,5,4,2,5,31,3,2,3,4,3,2,3,4,3,4,3,2,3,2,3,12,3,4,3,4,5,3,2,4,3,4,3,4,3,4,9,7,6,3,2,6,3,2,3,4,3,2,3]
+
+
+      }
+    ]
+  };
+  ;
+  if (option && typeof option === "object") {
+    myChart.setOption(option, true);
+  }
+</script>
+</body>
+</html>

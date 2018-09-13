@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html style="height: 100%">
+<head>
+  <meta charset="utf-8">
+</head>
+<body style="height: 100%; margin: 0">
+<div id="container" style="height: 100%"></div>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-gl/echarts-gl.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-stat/ecStat.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/dataTool.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/china.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/world.js"></script>
+<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=ZUONbpqGBsYGXNIYHicvbAbM"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/bmap.min.js"></script>
+<script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/simplex.js"></script>
+<script type="text/javascript">
+  var dom = document.getElementById("container");
+  var myChart = echarts.init(dom);
+  var app = {};
+  option = null;
+  option = {
+    title: {
+      text: 'chrome 10次请求测试（单位：微秒）'
+    },
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      data:['jquery.ajax','axios','ajax-js:close','ajax-js:open']
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    toolbox: {
+      feature: {
+        saveAsImage: {}
+      }
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      // data: ['周一','周二','周三','周四','周五','周六','周日']
+    },
+    yAxis: {
+      type: 'value'
+    },
+    series: [
+      {
+        name:'jquery.ajax',
+        type:'line',
+        stack: '总量',
+        data:[3091.064453125,1027.099609375,831.787109375,791.015625,834.9609375,719.970703125,706.787109375,606.93359375,591.064453125,864.990234375]
+
+      },
+      {
+        name:'axios',
+        type:'line',
+        stack: '总量',
+        data:[411.1328125,600.09765625,93.017578125,102.05078125,115.966796875,87.158203125,116.2109375,89.111328125,175.048828125,93.017578125]
+
+      },
+      {
+        name:'ajax-js:close',
+        type:'line',
+        stack: '总量',
+        data:[2351.07421875,874.0234375,469.23828125,435.05859375,425.78125,406.005859375,432.861328125,446.044921875,558.837890625,423.828125]
+      },
+      {
+        name:'ajax-js:open',
+        type:'line',
+        stack: '总量',
+        data:[1197.021484375,526.85546875,647.216796875,435.05859375,389.892578125,493.896484375,10.986328125,19.04296875,5.126953125,5.126953125]
+
+      }
+    ]
+  };
+  ;
+  if (option && typeof option === "object") {
+    myChart.setOption(option, true);
+  }
+</script>
+</body>
+</html>
