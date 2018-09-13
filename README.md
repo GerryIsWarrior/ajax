@@ -548,7 +548,8 @@
 #### 1.9版本更新  --- 设计请求池，复用请求，让前端通信快、更快、再快一点
 
 本次包括了设计阶段，摸索阶段，实现阶段，最后全面覆盖测试阶段（包括数据搜集清洗），还有与主流前端通信框架进行对比PK阶段。   
- 博客园：https://www.cnblogs.com/GerryOfZhong/p/9245510.html
+ 博客园：https://www.cnblogs.com/GerryOfZhong/p/9630569.html
+ 知乎：https://zhuanlan.zhihu.com/p/44477183
  
  
  
