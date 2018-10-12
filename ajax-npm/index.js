@@ -14,12 +14,10 @@
  *                  --1.6   集成promise规范，更优雅的操作异步
  *                  --1.7   新增ajax的全局配置、对请求参数拓展和重构、对初始化参数类型检查（非正确格式则恢复默认）、增加浏览器错误回收机制、增加请求blob类型、增加跨域传递凭证配置
  *                  --1.8   增加请求错误监控、前端负载均衡、宕机切换、以及迭代问题修复
- *                  --1.9   设计请求连接池，让通信更快一点，以及一些迭代的优化
  */
 (function () {
 
   var root = this
-
   //默认参数
   var initParam = {
     url: "",
@@ -53,7 +51,7 @@
     },
     // 请求池
     pool: {
-      isOpen: false,
+      isOpen: true,
       requestNumber: 6,
     },
 
@@ -70,24 +68,7 @@
     timeoutEvent: function (code, e) {
     }
   };
-  // 原型方法兼容
-  Array.prototype.indexOf = function (data) {
-    if (Array.indexOf) {
-      return Array.indexOf
-    } else {
-      if (JSON.stringify(data) === '{}' || data.length === 0) {
-        return -1
-      } else {
-        for (var key in this[0]) {
-          if (this[0][key] === data) {
-            return key
-          } else {
-            return -1
-          }
-        }
-      }
-    }
-  }
+
   //初始化参数固定类型检查
   var initParamType = {
     url: "String",
@@ -111,6 +92,7 @@
     errorEvent: 'function',
     timeoutEvent: 'function'
   };
+
   // 内部使用数据
   var selfData = {
     errAjax: {},
@@ -450,6 +432,7 @@
         onload: true,
         onreadystatechange: true,
         ontimeout: true,
+        // responseType:true,
         timeout: true,               // IE系列只有open连接之后才支持覆盖
         withCredentials: true,
         xhr_ie8: true
@@ -458,7 +441,7 @@
 
       for (var key in data) {
         if (mapping[key]) {
-          if (!isNaN(tool.getIEVersion()) && key !== 'timeout') {
+          if (isNaN(tool.getIEVersion()) && key !== 'timeout') {
             temp[key] = data[key]
           } else {
             var newKey = '_' + key
@@ -554,6 +537,7 @@
       }
     }
   };
+
   //抛出去给外部使用的方法
   var tempObj = {
     //通用ajax
@@ -758,8 +742,6 @@
         xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
       } else {
         selfData.xhr = xhr
-        window.xhr = xhr
-        // xhr.send()
       }
 
     },
@@ -1068,12 +1050,11 @@
     }
   };
 
-
   var outputObj = function () {
     //虽然在IE6、7上可以支持，但是最好升级你的浏览器，毕竟xp已经淘汰，面向未来吧，骚年，和我一起努力吧！！
     if (tool.getIEVersion() < 7) {
-      //实在不想说：升级你的浏览器吧
-      throw new Error("Sorry,please update your browser.(IE8+)");
+      //实在不想说：lowB，升级你的浏览器吧
+      throw new Error("Sorry,please upgrade your browser.(IE8+)");
     }
 
     // 是否开启连接池
