@@ -600,25 +600,32 @@
         if (ajaxSetting.type === 'get') {
           xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, xhr) + '?' + sendData, ajaxSetting.async)
         } else {
-          xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, xhr))
+          xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, xhr), ajaxSetting.async)
         }
       } else {
         xhr.open(ajaxSetting.type, ajaxSetting.baseURL + ajaxSetting.url, ajaxSetting.async)
       }
 
-      xhr.responseType = ajaxSetting.responseType;
-      xhr.withCredentials = ajaxSetting.withCredentials;
-
-      //设置超时时间（只有异步请求才有超时时间）
-      ajaxSetting.async ? (xhr.timeout = ajaxSetting.timeout) : (null);
+      /*
+      * 同步请求注意事项
+      *   xhr.timeout必须为0
+      *   xhr.withCredentials必须为 false
+      *   xhr.responseType必须为""（注意置为"text"也不允许）
+      * */
+      if (ajaxSetting.async) {
+        xhr.timeout = ajaxSetting.timeout
+        xhr.responseType = ajaxSetting.responseType;
+        xhr.withCredentials = ajaxSetting.withCredentials;
+      }else{
+        //xhr.responseType = ""    // responseType在同步下。连设置都不允许
+        // xhr.timeout = 0  // timeout在同步下。连设置都不允许
+        xhr.withCredentials = false
+      }
 
       //设置http协议的头部
       tool.each(ajaxSetting.requestHeader, function (item, index) {
         xhr.setRequestHeader(index, item)
       });
-
-      // 是否允许传输跨域凭证
-      xhr.withCredentials = ajaxSetting.withCredentials
 
       //onload事件（IE8下没有该事件）
       xhr.onload = function (e) {
