@@ -893,7 +893,6 @@
         url: url,
         data: data,
         contentType: 'json',
-        responseType: '',
         successEvent: function (dateCall) {
           successEvent(dateCall, this);
           if (!this.stop) {
