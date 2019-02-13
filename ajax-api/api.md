@@ -21,7 +21,7 @@
  
 描述：  
 　　ajax-js库核心api，其他暴露方法都是对该方法的封装  
-<br/>
+<br/><br/>
 
 ### <span id=config> config(options)</span>
 参数:  
@@ -29,7 +29,7 @@
  
 描述：  
 　　设置请求的全局参数
-<br/>
+<br/><br/>
 
 ### <span id=get> get(url, data, successEvent, errorEvent, timeoutEvent)</span>
 参数:  
@@ -41,7 +41,7 @@
  
 描述：  
 　　get请求
-<br/>
+<br/><br/>
 
 ### <span id=post> post(url, data, successEvent, errorEvent, timeoutEvent)</span>
 参数:  
@@ -53,7 +53,7 @@
  
 描述：  
 　　post请求，默认contentType = ''的请求
-<br/>
+<br/><br/>
 
 ### <span id=postJSON> postJSON(url, data, successEvent, errorEvent, timeoutEvent)</span>
 参数:  
@@ -65,7 +65,7 @@
  
 描述：  
 　　post请求，默认contentType = 'json'的请求
-<br/>
+<br/><br/>
 
 ### <span id=postFormData> postFormData(url, formData, successEvent, errorEvent, timeoutEvent)</span>
 参数:  
@@ -77,7 +77,7 @@
  
 描述：  
 　　post请求，发送formData对象
-<br/>
+<br/><br/>
 
 ### <span id=obtainBlob> obtainBlob(type, url, data, successEvent, errorEvent, timeoutEvent)</span>
 参数:  
@@ -90,7 +90,7 @@
  
 描述：  
 　　发送请求，获取blob二进制的数据流
-<br/>
+<br/><br/>
 
 ### <span id=promiseAjax> promiseAjax(url, data, type)</span>
 参数:  
@@ -103,7 +103,7 @@
 
 注意：
     在后面迭代将完善promise模型实现，然后把该方法去除，让所有对外暴露方法直接接入promise
-<br/>
+<br/><br/>
 
 ### <span id=longPolling> longPolling(type, url, data, successEvent, timeFrequency, errorEvent, timeoutEvent)</span>
 参数:  
@@ -120,7 +120,7 @@
 
 注意：
     successEvent(data,that)回调中，可以设置that.stop = true让轮询停止
-<br/>
+<br/><br/>
 
 ### <span id=upload> upload(url, file, size, fileType, successEvent, errorEvent, timeoutEvent)</span>
 参数:  
@@ -143,7 +143,7 @@
 
 注意：
     浏览器和服务器对上传文件都有大小限制的
-<br/>
+<br/><br/>
 
 ### <span id=upload_big> upload(url, file, cutSize, fileType, successEvent, progressEvent, errorEvent, timeoutEvent)</span>
 参数:  
@@ -165,7 +165,7 @@
 
 注意：
     该方法规避了浏览器和服务器对上传文件大小的限制，但是对于后端处理每个分片文件最后组合有一定的要求
-<br/>
+<br/><br/>
 
 ### <span id=detail>全局参数含义</span>
 options可设置参数：
@@ -223,14 +223,14 @@ options可设置参数：
  * errStatus
     * isOpenErr ：是否开启功能
     * errURL： 搜集错误上报接口
-    * ---
+    * 
     * 描述：是否设置错误搜集机制
     * 默认值：isOpenErr = false、errURL = ''
     
  * loadBalancing
     * isOpen： 是否开启功能
     * cluster： 负载服务器地址，可以配置多活地址
-    * ---
+    * 
     * 描述：提供前端请求分发功能
     * 默认值：isOpenErr = false、cluster = []
     
@@ -238,14 +238,14 @@ options可设置参数：
     * isOpen： 是否开启功能
     * strategies：服务切换策略
     * backupUrl：服务切换地址
-    * ---
+    * 
     * 描述：宕机切换功能，在特定策略中，能够使前端有能力进行服务切换
     * 默认值：isOpen = false、strategies = function(){}、backupUrl = ''
     
  * pool
     * isOpen： 是否开启功能
     * requestNumber： 请求池等待连接的请求数量
-    * ---
+    * 
     * 描述：请求池优化请求速度
     * 默认值：isOpen = true、requestNumber = 6
     
