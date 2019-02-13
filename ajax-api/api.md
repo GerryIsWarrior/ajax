@@ -33,11 +33,11 @@
 
 ### <span id=get> get(url, data, successEvent, errorEvent, timeoutEvent)</span>
 参数:  
- * url  \<string\>  请求地址
+ * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
  * data  \<object\>  请求参数
  * successEvent  \<function\>  成功回调
- * errorEvent  \<function\>  失败回调  __可选__
- * timeoutEvent  \<function\>  超时回调  __可选__
+ * errorEvent  \<function\>  失败回调  [__可选__]
+ * timeoutEvent  \<function\>  超时回调  [__可选__]
  
 描述：  
 　　发送get请求
