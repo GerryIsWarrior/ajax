@@ -1,6 +1,6 @@
-### ajax-js 1.9.1 文档
+## ajax-js 1.9.1 文档
 
-#### 目录
+### 目录
 
  *  [common(options, isCreatePoll)](#common)
  *  [config(options)](#config)
@@ -14,19 +14,35 @@
  *  [upload](#upload)
  *  [upload_big](#upload_big)
  
-#### <span id=common> common(options, isCreatePoll)</span>
+### <span id=common> common(options, isCreatePoll)</span>
 格式:  
- * options  \<object\>  请求参数，指定请求的各种参数，[具体参数含义](#detail)
+ * options  \<object\>  请求参数，指定请求的各种参数，[具体参数设置](#detail)
  * isCreatePoll  \<boolean\>  是否创建请求连接池子（内部使用，不对外，下一期迭代修改）
  
 描述：  
 　　ajax-js库核心api，其他暴露方法都是对该方法的封装  
 
 
+### <span id=config> config(options)</span>
+格式:  
+ * options  \<object\>  全局参数，[具体参数设置](#detail)
+ 
+描述：  
+　　设置请求的全局参数
 
 
+### <span id=get> get(url, data, successEvent, errorEvent, timeoutEvent)</span>
+格式:  
+ * url  \<string\>  请求地址
+ * data  \<object\>  请求参数
+ * successEvent  \<function\>  成功回调
+ * errorEvent  \<function\>  失败回调  __可选__
+ * timeoutEvent  \<function\>  超时回调  __可选__
+ 
+描述：  
+　　发送get请求
 
-#### 全局参数含义
+### <span id=detail>全局参数含义</span>
 options可设置参数：
  * url 
     * 描述： 接口请求地址    
@@ -82,14 +98,14 @@ options可设置参数：
  * errStatus
     * isOpenErr ：是否开启功能
     * errURL： 搜集错误上报接口
-    
+    * ---
     * 描述：是否设置错误搜集机制
     * 默认值：isOpenErr = false、errURL = ''
     
  * loadBalancing
     * isOpen： 是否开启功能
     * cluster： 负载服务器地址，可以配置多活地址
-    
+    * ---
     * 描述：提供前端请求分发功能
     * 默认值：isOpenErr = false、cluster = []
     
@@ -97,14 +113,14 @@ options可设置参数：
     * isOpen： 是否开启功能
     * strategies：服务切换策略
     * backupUrl：服务切换地址
-    
+    * ---
     * 描述：宕机切换功能，在特定策略中，能够使前端有能力进行服务切换
     * 默认值：isOpen = false、strategies = function(){}、backupUrl = ''
     
  * pool
     * isOpen： 是否开启功能
     * requestNumber： 请求池等待连接的请求数量
-    
+    * ---
     * 描述：请求池优化请求速度
     * 默认值：isOpen = true、requestNumber = 6
     
