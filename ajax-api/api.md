@@ -15,24 +15,24 @@
  *  [upload_big](#upload_big)
  
 ### <span id=common> common(options, isCreatePoll)</span>
-格式:  
+参数:  
  * options  \<object\>  请求参数，指定请求的各种参数，[具体参数设置](#detail)
  * isCreatePoll  \<boolean\>  是否创建请求连接池子（内部使用，不对外，下一期迭代修改）
  
 描述：  
 　　ajax-js库核心api，其他暴露方法都是对该方法的封装  
-
+<br/>
 
 ### <span id=config> config(options)</span>
-格式:  
+参数:  
  * options  \<object\>  全局参数，[具体参数设置](#detail)
  
 描述：  
 　　设置请求的全局参数
-
+<br/>
 
 ### <span id=get> get(url, data, successEvent, errorEvent, timeoutEvent)</span>
-格式:  
+参数:  
  * url  \<string\>  请求地址
  * data  \<object\>  请求参数
  * successEvent  \<function\>  成功回调
@@ -41,6 +41,7 @@
  
 描述：  
 　　发送get请求
+<br/>
 
 ### <span id=detail>全局参数含义</span>
 options可设置参数：
