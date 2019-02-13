@@ -80,25 +80,55 @@ options可设置参数：
     * 注意： 内置可设置的值''、'json'、'form'，如有其它需求，可在requestHeader中设置content-Type的值
     
  * errStatus
-    * isOpenErr ：是否开启错误搜集
+    * isOpenErr ：是否开启功能
     * errURL： 搜集错误上报接口
     
     * 描述：是否设置错误搜集机制
     * 默认值：isOpenErr = false、errURL = ''
     
  * loadBalancing
-    * isOpen： 是否开启前端负载分发功能
-    * cluster
- * serviceSwitching
-    * isOpen
-    * strategies
-    * backupUrl
- * pool
-    * isOpen
-    * requestNumber
- * transformRequest
- * transformResponse
- * successEvent
- * errorEvent
- * timeoutEvent
+    * isOpen： 是否开启功能
+    * cluster： 负载服务器地址，可以配置多活地址
     
+    * 描述：提供前端请求分发功能
+    * 默认值：isOpenErr = false、cluster = []
+    
+ * serviceSwitching
+    * isOpen： 是否开启功能
+    * strategies：服务切换策略
+    * backupUrl：服务切换地址
+    
+    * 描述：宕机切换功能，在特定策略中，能够使前端有能力进行服务切换
+    * 默认值：isOpen = false、strategies = function(){}、backupUrl = ''
+    
+ * pool
+    * isOpen： 是否开启功能
+    * requestNumber： 请求池等待连接的请求数量
+    
+    * 描述：请求池优化请求速度
+    * 默认值：isOpen = true、requestNumber = 6
+    
+ * transformRequest
+    * 描述：请求前参数处理
+    * 默认值：function(data){ return data }
+    * 注意： data为需要处理参数
+    
+ * transformResponse
+    * 描述：请求后参数处理
+    * 默认值：function(data){ return data }
+    * 注意： data为需要处理参数
+    
+ * successEvent
+    * 描述： 请求成功的回调处理
+    * 默认值：function(res){}
+    * PS： res为请求成功返回的数据
+    
+ * errorEvent
+    * 描述： 请求错误的回调处理
+    * 默认值：function(err){}
+    * PS： err为请求错误的消息
+    
+ * timeoutEvent
+    * 描述： 请求超时的回调处理
+    * 默认值：function(timeout){}
+    * PS： timeout为请求超时的消息
