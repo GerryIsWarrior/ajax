@@ -1,7 +1,7 @@
 /**
  * purpose：     ajax通用解决方案
  * author：      仲强
- * version:      1.9
+ * version:      1.9.1
  * date:         2018-09-12
  * email:        gerry.zhong@outlook.com
  * update:          --1.1   去除跨域请求头部设置   ==> author: keepfool (cnblogs)
@@ -15,6 +15,7 @@
  *                  --1.7   新增ajax的全局配置、对请求参数拓展和重构、对初始化参数类型检查（非正确格式则恢复默认）、增加浏览器错误回收机制、增加请求blob类型、增加跨域传递凭证配置
  *                  --1.8   增加请求错误监控、前端负载均衡、宕机切换、以及迭代问题修复
  *                  --1.9   设计请求连接池，让通信更快一点，以及一些迭代的优化
+ *                    --1.9.1   完善api文档，upload和upload_big中fileSelector换成file，直接使用文件，而不是去获取
  */
 (function (window) {
   //默认参数

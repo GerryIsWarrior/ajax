@@ -1,6 +1,6 @@
 {
   "name": "ajax-js",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "description": "a project for data transmission",
   "main": "index.js",
   "scripts": {
