@@ -932,14 +932,13 @@
      *                    1      超出文件限制大小
      *                    2      非允许文件格式
      * */
-    upload: function (url, fileSelector, size, fileType, successEvent, errorEvent, timeoutEvent) {
+    upload: function (url, file, size, fileType, successEvent, errorEvent, timeoutEvent) {
       var formdata = new FormData(),
-        fileNode = document.querySelector(fileSelector),
-        fileCount = fileNode.files.length, data = {},
+        fileCount = file.length, data = {},
         result = {};
       //以下为上传文件限制检查
       if (fileCount > 0) {
-        tool.each(Array.prototype.slice.call(fileNode.files), function (value) {
+        tool.each(Array.prototype.slice.call(file), function (value) {
           //检查文件大小
           if (value.size > size) {
             result["status"] = 1;
@@ -973,7 +972,7 @@
     /*
      *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用
      *       url                 文件上传地址
-     *       fileSelector        input=file 选择器
+     *       file                input=file选中的文件
      *       cutSize             切割文件大小
      *       fileType            文件限制类型 mime类型
      *       successEvent        上传成功处理
@@ -984,9 +983,8 @@
      *   return: status:  0      请选择文件
      *                    1      非允许文件格式
      * */
-    upload_big: function (url, fileSelector, cutSize, fileType, successEvent, progressEvent, errorEvent, timeoutEvent) {
-      var file = document.querySelector(fileSelector).files,
-        result = {};
+    upload_big: function (url, file, cutSize, fileType, successEvent, progressEvent, errorEvent, timeoutEvent) {
+      var result = {};
       //以下为上传文件限制检查
       if (file.length === 1) {
         if (fileType != "*") {

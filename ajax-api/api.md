@@ -9,15 +9,15 @@
  *  [postJSON(url, data, successEvent, errorEvent, timeoutEvent)](#postJSON)
  *  [postFormData(url, formData, successEvent, errorEvent, timeoutEvent)](#postFormData)
  *  [obtainBlob(type, url, data, successEvent, errorEvent, timeoutEvent)](#obtainBlob)
- *  [promiseAjax](#promiseAjax)
- *  [longPolling](#longPolling)
- *  [upload](#upload)
- *  [upload_big](#upload_big)
+ *  [promiseAjax(url, data, type)](#promiseAjax)
+ *  [longPolling(type, url, data, successEvent, timeFrequency, errorEvent, timeoutEvent)](#longPolling)
+ *  [upload(url, file, size, fileType, successEvent, errorEvent, timeoutEvent)](#upload)
+ *  [upload_big(url, file, cutSize, fileType, successEvent, progressEvent, errorEvent, timeoutEvent)](#upload_big)
  
 ### <span id=common> common(options, isCreatePoll)</span>
 参数:  
- * options  \<object\>  请求参数，指定请求的各种参数，[具体参数设置](#detail)
- * isCreatePoll  \<boolean\>  是否创建请求连接池子（内部使用，不对外，下一期迭代修改）
+ * options&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数，指定请求的各种参数，[具体参数设置](#detail)
+ * isCreatePoll&nbsp;&nbsp;&nbsp;&nbsp;\<boolean\>&nbsp;&nbsp;&nbsp;&nbsp;是否创建请求连接池子（内部使用，不对外，下一期迭代修改）
  
 描述：  
 　　ajax-js库核心api，其他暴露方法都是对该方法的封装  
@@ -25,7 +25,7 @@
 
 ### <span id=config> config(options)</span>
 参数:  
- * options  \<object\>  全局参数，[具体参数设置](#detail)
+ * options&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;全局参数，[具体参数设置](#detail)
  
 描述：  
 　　设置请求的全局参数
@@ -34,13 +34,137 @@
 ### <span id=get> get(url, data, successEvent, errorEvent, timeoutEvent)</span>
 参数:  
  * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
- * data  \<object\>  请求参数
- * successEvent  \<function\>  成功回调
- * errorEvent  \<function\>  失败回调  [__可选__]
- * timeoutEvent  \<function\>  超时回调  [__可选__]
+ * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
+ * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
+ * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
  
 描述：  
-　　发送get请求
+　　get请求
+<br/>
+
+### <span id=post> post(url, data, successEvent, errorEvent, timeoutEvent)</span>
+参数:  
+ * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
+ * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
+ * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
+ * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ 
+描述：  
+　　post请求，默认contentType = ''的请求
+<br/>
+
+### <span id=postJSON> postJSON(url, data, successEvent, errorEvent, timeoutEvent)</span>
+参数:  
+ * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
+ * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
+ * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
+ * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ 
+描述：  
+　　post请求，默认contentType = 'json'的请求
+<br/>
+
+### <span id=postFormData> postFormData(url, formData, successEvent, errorEvent, timeoutEvent)</span>
+参数:  
+ * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
+ * formData&nbsp;&nbsp;&nbsp;&nbsp;\<formData\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数，formData对象
+ * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
+ * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ 
+描述：  
+　　post请求，发送formData对象
+<br/>
+
+### <span id=obtainBlob> obtainBlob(type, url, data, successEvent, errorEvent, timeoutEvent)</span>
+参数:  
+ * type&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求类型（默认post）
+ * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
+ * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
+ * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
+ * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ 
+描述：  
+　　发送请求，获取blob二进制的数据流
+<br/>
+
+### <span id=promiseAjax> promiseAjax(url, data, type)</span>
+参数:  
+ * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
+ * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
+ * type&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求类型
+ 
+描述：  
+　　封装promise，处理请求    
+
+注意：
+    在后面迭代将完善promise模型实现，然后把该方法去除，让所有对外暴露方法直接接入promise
+<br/>
+
+### <span id=longPolling> longPolling(type, url, data, successEvent, timeFrequency, errorEvent, timeoutEvent)</span>
+参数:  
+ * type&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求类型
+ * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
+ * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
+ * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功事件处理，如果让轮询停止，则在第二个回调参数设置stop属性就好
+ * timeFrequency&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;轮询时间
+ * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ 
+描述：  
+　　长轮询请求，支持无限轮询和可控制式的轮询    
+
+注意：
+    successEvent(data,that)回调中，可以设置that.stop = true让轮询停止
+<br/>
+
+### <span id=upload> upload(url, file, size, fileType, successEvent, errorEvent, timeoutEvent)</span>
+参数:  
+ * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;文件上传地址
+ * file&nbsp;&nbsp;&nbsp;&nbsp;\<blob\>&nbsp;&nbsp;&nbsp;&nbsp;input=file 选择的文件
+ * size&nbsp;&nbsp;&nbsp;&nbsp;\<number\>&nbsp;&nbsp;&nbsp;&nbsp;文件限制大小
+ * fileType&nbsp;&nbsp;&nbsp;&nbsp;\<string/array\>&nbsp;&nbsp;&nbsp;&nbsp;文件限制类型 mime类型。所有类型设置：'*'，否则其他类型，每个类型都用数组包括进去
+ * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功事件处理，如果让轮询停止，则在第二个回调参数设置stop属性就好
+ * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ 
+返回：
+ * status
+  * 0&nbsp;&nbsp;&nbsp;&nbsp;请选择文件
+  * 1&nbsp;&nbsp;&nbsp;&nbsp;超出文件限制大小
+  * 2&nbsp;&nbsp;&nbsp;&nbsp;非允许文件格式
+ 
+描述：  
+　　上传文件请求    
+
+注意：
+    浏览器和服务器对上传文件都有大小限制的
+<br/>
+
+### <span id=upload_big> upload(url, file, cutSize, fileType, successEvent, progressEvent, errorEvent, timeoutEvent)</span>
+参数:  
+ * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;文件上传地址
+ * file&nbsp;&nbsp;&nbsp;&nbsp;\<blob\>&nbsp;&nbsp;&nbsp;&nbsp;input=file 选择的文件
+ * cutSize&nbsp;&nbsp;&nbsp;&nbsp;\<number\>&nbsp;&nbsp;&nbsp;&nbsp;切割文件大小
+ * fileType&nbsp;&nbsp;&nbsp;&nbsp;\<string/array\>&nbsp;&nbsp;&nbsp;&nbsp;文件限制类型 mime类型。所有类型设置：'*'，否则其他类型，每个类型都用数组包括进去
+ * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功事件处理，如果让轮询停止，则在第二个回调参数设置stop属性就好
+ * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
+ 
+返回：
+ * status
+  * 0&nbsp;&nbsp;&nbsp;&nbsp;请选择文件
+  * 1&nbsp;&nbsp;&nbsp;&nbsp;非允许文件格式
+ 
+描述：  
+　　超大文件切割上传    
+
+注意：
+    该方法规避了浏览器和服务器对上传文件大小的限制，但是对于后端处理每个分片文件最后组合有一定的要求
 <br/>
 
 ### <span id=detail>全局参数含义</span>
