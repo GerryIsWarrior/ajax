@@ -1,5 +1,8 @@
 # 原生js的ajax设计方案(现已支持npm安装)
 
+[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
+[![Badge](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu/#/zh_CN)
+
 #### npm安装，文档见底部
     npm i ajax-js  /  yarn add ajax-js
 
