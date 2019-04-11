@@ -5,14 +5,14 @@
 *   blog：
 * */
 function Promise(fn) {
-  let self = this
+  var self = this
   self.PromiseStatus = 'PENDING'
 
-  let callbackArr = [], finallyCall
+  var callbackArr = [], finallyCall
 
   this.then = function (resolveFun, rejectFun) {
     // 2.2.1 ✔️
-    let Promise2
+    var Promise2
 
     // pending 状态处理
     if (self.PromiseStatus === 'PENDING') {
@@ -28,7 +28,7 @@ function Promise(fn) {
           resolveCall: function (result) {
             setTimeout(function () {
               try {
-                let x = resolveFun(result)
+                var x = resolveFun(result)
                 resolvePromise(Promise2, x, resolve, reject)
               } catch (e) {
                 reject(e)
@@ -40,7 +40,7 @@ function Promise(fn) {
           rejectCall: function (result) {
             setTimeout(function () {
               try {
-                let x = rejectFun(result)
+                var x = rejectFun(result)
                 resolvePromise(Promise2, x, resolve, reject)
               } catch (e) {
                 reject(e)
@@ -61,7 +61,7 @@ function Promise(fn) {
         } else {
           try {
             setTimeout(function () {
-              let x = resolveFun(self.PromiseValue)
+              var x = resolveFun(self.PromiseValue)
               resolvePromise(Promise2, x, resolve, reject)
             })
           } catch (e) {
@@ -81,7 +81,7 @@ function Promise(fn) {
           } else {
             try {
               setTimeout(function () {
-                let x = rejectFun(self.PromiseValue)
+                var x = rejectFun(self.PromiseValue)
                 resolvePromise(Promise2, x, resolve, reject)
               })
             } catch (e) {
@@ -123,7 +123,7 @@ function Promise(fn) {
       }
     } else {
       if (typeof x === 'object' || typeof x === 'function') {
-        let then;
+        var then;
         // 2.3.3.2 ✔️
         try {
           then = x.then
@@ -185,12 +185,12 @@ function Promise(fn) {
 }
 
 Promise.all = function (arr) {
-  let temp = arr.map(x => {
+  var temp = arr.map(x => {
     return Promise.resolve(x)
   })
 
   return new Promise(function (res, rej) {
-    let resValue = [], isReject = false
+    var resValue = [], isReject = false
     temp.forEach(x => {
       x.then(function (value) {
         resValue.push(value)
@@ -206,12 +206,12 @@ Promise.all = function (arr) {
 }
 
 Promise.race = function (arr) {
-  let temp = arr.map(x => {
+  var temp = arr.map(x => {
     return Promise.resolve(x)
   })
 
   return new Promise(function (res, rej) {
-    let isComplete = false
+    var isComplete = false
     temp.forEach(x => {
       x.then(function (value) {
         if (!isComplete) {

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>测试</title>
   <script src="../ajax-dev/ajax.1.9.1.js"></script>
-  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <!--<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>-->
     <style>
 
     </style>
@@ -15,77 +15,83 @@
         <strong>以下为基础功能测试</strong>
         <button onclick="request_get()">测试get请求</button>
         <button onclick="request_post()">测试post请求</button>
-        <button onclick="request_postJSON()">测试postJSON请求</button>
         <button onclick="request_formData()">测试postFormData请求</button>
         <button onclick="request_obtainBlob()">测试obtainBlob请求</button>
         <button onclick="request_longPolling()">测试longPolling请求</button>
     </div>
 
 <div>
-    <strong>打开控制台查看连接池测试</strong>
-  <button onclick="sendReq10()">测试10</button>
-  <button onclick="sendReq100()">测试100</button>
-  <button onclick="sendReq1000()">测试1000</button>
-  <button onclick="sendReq5000()">测试5000</button>
-  <button onclick="jquerysendReq10()">jquery测试10</button>
-  <button onclick="jquerysendReq100()">jquery测试100</button>
-  <button onclick="jquerysendReq1000()">jquery测试1000</button>
-  <button onclick="jquerysendReq5000()">jquery测试5000</button>
+    <!--<strong>打开控制台查看连接池测试</strong>-->
+  <!--<button onclick="sendReq10()">测试10</button>-->
+  <!--<button onclick="sendReq100()">测试100</button>-->
+  <!--<button onclick="sendReq1000()">测试1000</button>-->
+  <!--<button onclick="sendReq5000()">测试5000</button>-->
+  <!--<button onclick="jquerysendReq10()">jquery测试10</button>-->
+  <!--<button onclick="jquerysendReq100()">jquery测试100</button>-->
+  <!--<button onclick="jquerysendReq1000()">jquery测试1000</button>-->
+  <!--<button onclick="jquerysendReq5000()">jquery测试5000</button>-->
 </div>
 
 <div>
-    <strong>打开控制台查看连接池测试,每隔一秒发送请求</strong>
-    <button onclick="qsendReq10()">测试10</button>
-    <button onclick="qsendReq100()">测试100</button>
-    <button onclick="qsendReq1000()">测试1000</button>
-    <button onclick="qsendReq5000()">测试5000</button>
-    <button onclick="qjquerysendReq10()">jquery测试10</button>
-    <button onclick="qjquerysendReq100()">jquery测试100</button>
-    <button onclick="qjquerysendReq1000()">jquery测试1000</button>
-    <button onclick="qjquerysendReq5000()">jquery测试5000</button>
+    <!--<strong>打开控制台查看连接池测试,每隔一秒发送请求</strong>-->
+    <!--<button onclick="qsendReq10()">测试10</button>-->
+    <!--<button onclick="qsendReq100()">测试100</button>-->
+    <!--<button onclick="qsendReq1000()">测试1000</button>-->
+    <!--<button onclick="qsendReq5000()">测试5000</button>-->
+    <!--<button onclick="qjquerysendReq10()">jquery测试10</button>-->
+    <!--<button onclick="qjquerysendReq100()">jquery测试100</button>-->
+    <!--<button onclick="qjquerysendReq1000()">jquery测试1000</button>-->
+    <!--<button onclick="qjquerysendReq5000()">jquery测试5000</button>-->
 </div>
 </body>
 </html>
 <script>
+  ajax.config({
+    baseURL:'http://localhost:3000/',
+    mock: {
+      isOpen:true,
+      mockData: {
+        'post':'我是mock数据'
+      }
+    }
+  })
     // 基础功能测试
     var number = 0
 
     function request_get() {
-      ajax.get('http://localhost:3000/get',{data:'ajaxGet'},function (res) {
-        console.log(res)
-      })
+      ajax.get('get',{data:'ajaxGet'})
+        .then(x=>{
+          console.warn(x.data)
+        })
     }
 
     function request_post() {
-      ajax.post('http://localhost:3000/post',{data:'ajaxPost'},function (res) {
-        console.log(res)
-      })
-    }
-
-    function request_postJSON() {
-      ajax.postJSON('http://localhost:3000/postJSON',{data:'ajaxPostJSON'},function (res) {
-        console.log(res)
-      })
+      ajax.post('post',{data:'ajaxPost'})
+        .then(x=>{
+          console.warn(x.data)
+        })
     }
 
     function request_formData() {
       var formData = new FormData()
       formData.append("data","ajaxFormData")
-      ajax.postFormData('http://localhost:3000/postFormData',formData,function (res) {
-        console.log(res)
-      })
+      ajax.postFormData('postFormData',formData)
+        .then(x=>{
+          console.warn(x)
+        })
     }
 
     function request_obtainBlob() {
-      ajax.obtainBlob('post','http://localhost:3000/postBlob',{data:'obtainBlob'},function (res) {
-        var img = document.createElement("img");
-        img.src = window.URL.createObjectURL(res);
-        document.body.appendChild(img);
-      })
+      ajax.obtainBlob('post','postBlob',{data:'obtainBlob'})
+        .then(x=>{
+          var img = document.createElement("img");
+          img.src = window.URL.createObjectURL(x);
+          document.body.appendChild(img);
+        })
     }
 
     function request_longPolling() {
-      ajax.longPolling('post','http://localhost:3000/post',{data:'longPolling'},function (res,that) {
+      ajax.longPolling('post','post',{data:'longPolling'},function (res,that) {
         number ++
         console.log(res)
         if (number === 3){
