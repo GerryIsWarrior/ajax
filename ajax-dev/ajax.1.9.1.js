@@ -1,8 +1,8 @@
 /**
  * purpose：     ajax通用解决方案
  * author：      仲强
- * version:      1.9.1
- * date:         2018-09-12
+ * version:      1.9.2
+ * date:         2019-04-11
  * email:        gerry.zhong@outlook.com
  * update:          --1.1   去除跨域请求头部设置   ==> author: keepfool (cnblogs)
  *                  --1.2   更新tool方法，完善结构  ==> author: pod4g  (github)
@@ -16,6 +16,7 @@
  *                  --1.8   增加请求错误监控、前端负载均衡、宕机切换、以及迭代问题修复
  *                  --1.9   设计请求连接池，让通信更快一点，以及一些迭代的优化
  *                    --1.9.1   完善api文档，upload和upload_big中fileSelector换成file，直接使用文件，而不是去获取
+ *                    --1.9.2   完全实现Promise A+模型，增加mock数据功能
  */
 (function (window) {
   //默认参数
