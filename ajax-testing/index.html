@@ -14,7 +14,7 @@
     <div>
         <strong>以下为基础功能测试</strong>
         <button onclick="request_get()">测试get请求</button>
-        <button onclick="test()">测试post请求</button>
+        <button onclick="request_post()">测试post请求</button>
         <button onclick="request_formData()">测试postFormData请求</button>
         <button onclick="request_obtainBlob()">测试obtainBlob请求</button>
         <button onclick="request_longPolling()">测试longPolling请求</button>
@@ -304,22 +304,5 @@
       qqq++
     },1000)
   }
-
-
-  // function test() {
-    function ttt() {
-      return new Promise(function (res,rej) {
-        return ajax.post('post',{data:'ajaxPost'})
-      })
-    }
-  // }
-
-  function test() {
-    ttt().then(x=>{
-      console.warn('zq',x)
-    })
-  }
-
-
 
 </script>

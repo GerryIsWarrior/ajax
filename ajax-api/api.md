@@ -4,14 +4,12 @@
 
  *  [common(options, isCreatePoll)](#common)
  *  [config(options)](#config)
- *  [get(url, data, successEvent, errorEvent, timeoutEvent)](#get)
- *  [post(url, data, successEvent, errorEvent, timeoutEvent)](#post)
- *  [postJSON(url, data, successEvent, errorEvent, timeoutEvent)](#postJSON)
- *  [postFormData(url, formData, successEvent, errorEvent, timeoutEvent)](#postFormData)
- *  [obtainBlob(type, url, data, successEvent, errorEvent, timeoutEvent)](#obtainBlob)
- *  [promiseAjax(url, data, type)](#promiseAjax)
+ *  [get(url, data)](#get)
+ *  [post(url, data)](#post)
+ *  [postFormData(url, formData)](#postFormData)
+ *  [obtainBlob(type, url, data)](#obtainBlob)
  *  [longPolling(type, url, data, successEvent, timeFrequency, errorEvent, timeoutEvent)](#longPolling)
- *  [upload(url, file, size, fileType, successEvent, errorEvent, timeoutEvent)](#upload)
+ *  [upload(url, file, size, fileType)](#upload)
  *  [upload_big(url, file, cutSize, fileType, successEvent, progressEvent, errorEvent, timeoutEvent)](#upload_big)
  
 ### <span id=common> common(options, isCreatePoll)</span>
@@ -31,78 +29,53 @@
 　　设置请求的全局参数
 <br/><br/>
 
-### <span id=get> get(url, data, successEvent, errorEvent, timeoutEvent)</span>
+### <span id=get> get(url, data)</span>
 参数:  
  * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
  * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
- * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
- * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
- * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
  
 描述：  
-　　get请求
+　　get请求     
+
+return：     
+　　Promise 
 <br/><br/>
 
-### <span id=post> post(url, data, successEvent, errorEvent, timeoutEvent)</span>
+### <span id=post> post(url, data)</span>
 参数:  
  * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
  * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
- * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
- * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
- * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
  
 描述：  
 　　post请求，默认contentType = ''的请求
+
+return：     
+　　Promise 
 <br/><br/>
 
-### <span id=postJSON> postJSON(url, data, successEvent, errorEvent, timeoutEvent)</span>
-参数:  
- * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
- * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
- * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
- * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
- * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
- 
-描述：  
-　　post请求，默认contentType = 'json'的请求
-<br/><br/>
-
-### <span id=postFormData> postFormData(url, formData, successEvent, errorEvent, timeoutEvent)</span>
+### <span id=postFormData> postFormData(url, formData)</span>
 参数:  
  * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
  * formData&nbsp;&nbsp;&nbsp;&nbsp;\<formData\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数，formData对象
- * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
- * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
- * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
  
 描述：  
 　　post请求，发送formData对象
+
+return：     
+　　Promise 
 <br/><br/>
 
-### <span id=obtainBlob> obtainBlob(type, url, data, successEvent, errorEvent, timeoutEvent)</span>
+### <span id=obtainBlob> obtainBlob(type, url, data)</span>
 参数:  
  * type&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求类型（默认post）
  * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
  * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
- * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功回调
- * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
- * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
  
 描述：  
 　　发送请求，获取blob二进制的数据流
-<br/><br/>
 
-### <span id=promiseAjax> promiseAjax(url, data, type)</span>
-参数:  
- * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求地址
- * data&nbsp;&nbsp;&nbsp;&nbsp;\<object\>&nbsp;&nbsp;&nbsp;&nbsp;请求参数
- * type&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;请求类型
- 
-描述：  
-　　封装promise，处理请求    
-
-注意：
-    在后面迭代将完善promise模型实现，然后把该方法去除，让所有对外暴露方法直接接入promise
+return：     
+　　Promise 
 <br/><br/>
 
 ### <span id=longPolling> longPolling(type, url, data, successEvent, timeFrequency, errorEvent, timeoutEvent)</span>
@@ -122,15 +95,12 @@
     successEvent(data,that)回调中，可以设置that.stop = true让轮询停止
 <br/><br/>
 
-### <span id=upload> upload(url, file, size, fileType, successEvent, errorEvent, timeoutEvent)</span>
+### <span id=upload> upload(url, file, size, fileType)</span>
 参数:  
  * url&nbsp;&nbsp;&nbsp;&nbsp;\<string\>&nbsp;&nbsp;&nbsp;&nbsp;文件上传地址
  * file&nbsp;&nbsp;&nbsp;&nbsp;\<blob\>&nbsp;&nbsp;&nbsp;&nbsp;input=file 选择的文件
  * size&nbsp;&nbsp;&nbsp;&nbsp;\<number\>&nbsp;&nbsp;&nbsp;&nbsp;文件限制大小
  * fileType&nbsp;&nbsp;&nbsp;&nbsp;\<string/array\>&nbsp;&nbsp;&nbsp;&nbsp;文件限制类型 mime类型。所有类型设置：'*'，否则其他类型，每个类型都用数组包括进去
- * successEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;成功事件处理，如果让轮询停止，则在第二个回调参数设置stop属性就好
- * errorEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;失败回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
- * timeoutEvent&nbsp;&nbsp;&nbsp;&nbsp;\<function\>&nbsp;&nbsp;&nbsp;&nbsp;超时回调&nbsp;&nbsp;&nbsp;&nbsp;[__可选__]
  
 返回：
  * status
@@ -140,6 +110,9 @@
  
 描述：  
 　　上传文件请求    
+
+return：     
+　　Promise       
 
 注意：
     浏览器和服务器对上传文件都有大小限制的
@@ -248,6 +221,13 @@ options可设置参数：
     * 
     * 描述：请求池优化请求速度
     * 默认值：isOpen = true、requestNumber = 6
+    
+ * mock
+    * isOpen： 是否开启功能
+    * mockData： 本地mock数据
+    * 
+    * 描述：本地mock数据
+    * 默认值：isOpen = false、mockData = {}
     
  * transformRequest
     * 描述：请求前参数处理
