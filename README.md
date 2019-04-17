@@ -1,8 +1,5 @@
 # 原生js的ajax设计方案(现已支持npm安装)
 
-[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
-[![Badge](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu/#/zh_CN)
-
 #### npm安装，文档见底部
     npm i ajax-js  /  yarn add ajax-js
 
@@ -464,75 +461,9 @@
 
 备注：ajax的上传技术，在es5+之后支持，浏览器的兼容性就是除了IE10以下，大部分都支持了       
 
-#### 1.6版本更新  ---   集成promise规范，更优雅操作异步（主要增加了promise代码）
-    createPromise:function(){
-        var newPromise = function(fn){
-            var promise = this;
-            //状态机的状态
-            var PROMISESTATE = {
-                PENDING : 0 ,
-                FULFILLED : 1 ,
-                REJECTED : 2
-            };
-            //存储当前变量的回调函数和标记对象为promise
-            promise._fullCalll =[],promise._rejCall = [];promise._name = "promise";
-            //执行过程中的状态变化(初始化状态为默认状态)
-            var _state =  PROMISESTATE.PENDING;
-            //回调函数的参数
-            var _value = undefined;
+#### <del>1.6版本更新  ---   集成promise规范，更优雅操作异步（主要增加了promise代码）</del>   注意：该迭代已经废弃，请移步1.9.2迭代
 
-            //状态变更
-            function setState(stateT,valueT){
-                var promise = this;
-                _state = stateT;
-                _value = valueT;
-                handleFun.call(promise);  //传递作用域，并且执行回调函数
-            };
-
-            //根据状态处理回调
-            function handleFun(){
-                var promise = this,isThen;
-
-                if (_state === PROMISESTATE.FULFILLED &&
-                    typeof promise._fullCalll[0] === 'function') {
-                    isThen = promise._fullCalll[0](_value);
-                };
-                if (_state === PROMISESTATE.REJECTED &&
-                    typeof promise._rejCall[0] === 'function') {
-                    isThen = promise._rejCall[0](_value);
-                };
-                //对于是否可以继续进行then做判断
-                //  1. 不可then的，直接return结束（条件：无返回值、返回值不是promise对象的）
-                //  2. 对于可以then的，将then的回调进行处理，然后对象之间传递。
-                if (isThen === undefined || !(typeof isThen === 'object' && isThen._name === 'promise')) return;
-
-                promise._fullCalll.shift(); promise._rejCall.shift();      //清除当前对象使用过的对调
-                isThen._fullCalll =promise._fullCalll;isThen._rejCall = promise._rejCall;  //将剩下的回调传递到下一个对象
-            };
-
-            //promimse入口
-            function doResolve(fn){
-                var promise = this;
-                fn(function(param) {
-                    setState.call(promise,PROMISESTATE.FULFILLED,param);
-                }, function(reason) {
-                    setState.call(promise,PROMISESTATE.REJECTED,reason);
-                });
-            };
-
-            //函数then，处理回调，返回对象保证链式调用
-            this.then = function(onFulfilled,onRejected) {
-                this._fullCalll.push(onFulfilled);
-                this._rejCall.push(onRejected);
-                return this;
-            }
-
-            doResolve.call(promise,fn);
-        };
-        window.Promise = newPromise;
-    },
-
-如果想要看文件上传具体内容和测试各种结果，请转到这片博客：http://www.cnblogs.com/GerryOfZhong/p/7096792.html
+<del>如果想要看文件上传具体内容和测试各种结果，请转到这片博客：http://www.cnblogs.com/GerryOfZhong/p/7096792.html</del>
 
 #### 1.7版本更新  --- 全局配置、请求格式拓展和优化、请求二进制类型、浏览器错误搜集以及npm打包发布
 
@@ -551,17 +482,23 @@
 #### 1.9版本更新  --- 设计请求池，复用请求，让前端通信快、更快、再快一点
 
 本次包括了设计阶段，摸索阶段，实现阶段，最后全面覆盖测试阶段（包括数据搜集清洗），还有与主流前端通信框架进行对比PK阶段。   
- 博客园：https://www.cnblogs.com/GerryOfZhong/p/9630569.html
+ 博客园：https://www.cnblogs.com/GerryOfZhong/p/9630569.html        
  知乎：https://zhuanlan.zhihu.com/p/44477183
  
+#### 1.9.1版本更新  --- 增加了文档支持     
+
+本地仅增加了文档的支持，请移步ajax-api/api.md 查看
  
+#### 1.9.2版本更新  --- 完善Promise A+规范，增加mock数据功能     
+
+本次包括完善了整个Promise A+ 规范，实现了ES6全部功能，以及增加了ajax库支持mock数据的能力。   
+ 博客园：https://www.cnblogs.com/GerryOfZhong/p/10726306.html        
+ 知乎：https://zhuanlan.zhihu.com/p/44477183       
  
 #### 具体代码已封装成一个js库，下面为API库
   * 全局配置参数              --  ajax.config
   * get请求                   --  ajax.get
   * post请求                  --  ajax.post
-  * post(参数为json)请求      --  ajax.postJSON
-  * promise请求               --  ajax.promiseAjax
   * postForm请求              --  ajax.postFormData
   * 获取blob数据集            --  ajax.obtainBlob
   * 轮询请求                  --  ajax.longPolling
@@ -594,3 +531,8 @@
   * 职业目标：全栈架构师
   * 博客园:http://www.cnblogs.com/GerryOfZhong
   * 知乎:https://www.zhihu.com/people/zhong-qiang-51-33/activities
+
+
+
+[![LICENSE](https://img.shields.io/badge/license-Anti%20996-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
+[![Badge](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu/#/zh_CN)
