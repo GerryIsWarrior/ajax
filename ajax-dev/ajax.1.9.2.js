@@ -109,6 +109,7 @@
     loadBalancing: 'Object',
     serviceSwitching: 'Object',
     pool: 'Object',
+    mock: 'Object',
     transformRequest: 'function',
     transformResponse: 'function',
     successEvent: 'function',
@@ -662,9 +663,9 @@
       // mock数据校验
       var ajaxSetting = tool.checkParam(param)
       var urlMockValue = ajaxSetting.mock.mockData[ajaxSetting.url]
-      if (ajaxSetting.mock.isOpen && urlMockValue ) {
+      if (ajaxSetting.mock.isOpen && urlMockValue) {
         ajaxSetting.successEvent(urlMockValue)
-      }else {
+      } else {
         // 判断请求池中是否有可用请求
         if (selfData.requestPool.length !== 0) {
           var temp = selfData.requestPool.shift(), sendData = '', tempHeader = {}
@@ -749,9 +750,9 @@
 
       // mock数据校验
       var urlMockValue = ajaxSetting.mock.mockData[ajaxSetting.url]
-      if (ajaxSetting.mock.isOpen && urlMockValue ) {
+      if (ajaxSetting.mock.isOpen && urlMockValue) {
         ajaxSetting.successEvent(urlMockValue)
-      }else {
+      } else {
         //创建xhr对象
         var xhr = tool.createXhrObject();
 
@@ -1016,7 +1017,7 @@
     },
     //异步post请求
     postFormData: function (url, formData) {
-      return new Promise(function (res,rej) {
+      return new Promise(function (res, rej) {
         var ajaxParam = {
           type: "post",
           url: url,
@@ -1067,7 +1068,7 @@
         type: type,
         url: url,
         data: data,
-        contentType: 'json',
+        contentType: '',
         successEvent: function (dateCall) {
           successEvent(dateCall, this);
           if (!this.stop) {
@@ -1107,42 +1108,44 @@
      *                    1      超出文件限制大小
      *                    2      非允许文件格式
      * */
-    upload: function (url, file, size, fileType, successEvent, errorEvent, timeoutEvent) {
-      var formdata = new FormData(),
-        fileCount = file.length, data = {},
-        result = {};
-      //以下为上传文件限制检查
-      if (fileCount > 0) {
-        tool.each(Array.prototype.slice.call(file), function (value) {
-          //检查文件大小
-          if (value.size > size) {
-            result["status"] = 1;
-            result["errMsg"] = "超出文件限制大小";
-          } else {
-            if (fileType != "*") {
-              //检查文件格式.因为支持formdata，自然支持数组的indexof(h5)
-              if (fileType.indexOf(value.type) === -1) {
-                result["status"] = 2;
-                result["errMsg"] = "非允许文件格式";
+    upload: function (url, file, size, fileType) {
+      return new Promise(function (res, rej) {
+        var formdata = new FormData(),
+          fileCount = file.length, data = {},
+          result = {};
+        //以下为上传文件限制检查
+        if (fileCount > 0) {
+          tool.each(Array.prototype.slice.call(file), function (value) {
+            //检查文件大小
+            if (value.size > size) {
+              result["status"] = 1;
+              result["errMsg"] = "超出文件限制大小";
+            } else {
+              if (fileType != "*") {
+                //检查文件格式.因为支持formdata，自然支持数组的indexof(h5)
+                if (fileType.indexOf(value.type) === -1) {
+                  result["status"] = 2;
+                  result["errMsg"] = "非允许文件格式";
+                } else {
+                  formdata.append(value.name, value);
+                }
+                ;
               } else {
                 formdata.append(value.name, value);
               }
-              ;
-            } else {
-              formdata.append(value.name, value);
             }
-          }
-          ;
-        });
-      } else {
-        result["status"] = 0;
-        result["errMsg"] = "请选择文件";
-      }
-      ;
+            ;
+          });
+        } else {
+          result["status"] = 0;
+          result["errMsg"] = "请选择文件";
+        }
+        ;
 
-      if (result.status !== undefined) return result;   //如果有错误信息直接抛出去,结束运行
+        if (result.status !== undefined) rej(result);   //如果有错误信息直接抛出去,结束运行
 
-      tempObj.postFormData(url, formdata, successEvent, errorEvent, timeoutEvent)
+        return tempObj.postFormData(url, formdata).then(res, rej)
+      })
     },
     /*
      *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用

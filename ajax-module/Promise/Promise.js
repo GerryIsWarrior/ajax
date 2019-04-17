@@ -1,8 +1,7 @@
 /*
 *   title：  Promise 原理和实现
 *   author： gerry.zhong
-*   github:
-*   blog：
+*   blog：   https://www.cnblogs.com/GerryOfZhong/p/10726306.html
 * */
 function Promise(fn) {
   var self = this
