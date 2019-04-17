@@ -1,6 +1,6 @@
 {
   "name": "ajax-js",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "a project for data transmission",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "XMLHttpRequest"
   ],
   "author": "gerry.zhong",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/GerryIsWarrior/ajax/issues"
   },

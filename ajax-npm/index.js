@@ -1,8 +1,8 @@
 /**
  * purpose：     ajax通用解决方案
  * author：      仲强
- * version:      1.9.1
- * date:         2017-9-21
+ * version:      1.9.2
+ * date:         2019-04-18
  * email:        gerry.zhong@outlook.com
  * update:          --1.1   去除跨域请求头部设置   ==> author: keepfool (cnblogs)
  *                  --1.2   更新tool方法，完善结构  ==> author: pod4g  (github)
@@ -16,6 +16,7 @@
  *                  --1.8   增加请求错误监控、前端负载均衡、宕机切换、以及迭代问题修复
  *                  --1.9   设计请求池，复用请求，让前端通信快、更快、再快一点
  *                    --1.9.1   完善api文档，upload和upload_big中fileSelector换成file，直接使用文件，而不是去获取
+ *                    --1.9.2   完全实现Promise A+模型，增加mock数据功能
  */
 (function () {
 
@@ -56,6 +57,11 @@
       isOpen: true,
       requestNumber: 6,
     },
+    // mock功能
+    mock: {
+      isOpen: true,
+      mockData: {}
+    },
 
     transformRequest: function (data) {
       return data;
@@ -88,6 +94,7 @@
     loadBalancing: 'Object',
     serviceSwitching: 'Object',
     pool: 'Object',
+    mock: 'Object',
     transformRequest: 'function',
     transformResponse: 'function',
     successEvent: 'function',
@@ -264,7 +271,7 @@
           }
         }
       }
-      that.currentUrl = url
+      if (!initParam.mock.isOpen) that.currentUrl = url
       return url;
     },
     //批量检查数据类型
@@ -323,74 +330,247 @@
     },
     //如果浏览器不支持Promise特性，将用简易的promise代替(IE11-都不支持ES6 Promise)
     createPromise: function () {
-      var newPromise = function (fn) {
-        var promise = this;
-        //状态机的状态
-        var PROMISESTATE = {
-          PENDING: 0,
-          FULFILLED: 1,
-          REJECTED: 2
-        };
-        //存储当前变量的回调函数和标记对象为promise
-        promise._fullCalll = [], promise._rejCall = [];
-        promise._name = "promise";
-        //执行过程中的状态变化(初始化状态为默认状态)
-        var _state = PROMISESTATE.PENDING;
-        //回调函数的参数
-        var _value = undefined;
+      var newPromise = function Promise(fn) {
+        var self = this
+        self.PromiseStatus = 'PENDING'
 
-        //状态变更
-        function setState(stateT, valueT) {
-          var promise = this;
-          _state = stateT;
-          _value = valueT;
-          handleFun.call(promise);  //传递作用域，并且执行回调函数
-        };
+        var callbackArr = [], finallyCall
 
-        //根据状态处理回调
-        function handleFun() {
-          var promise = this, isThen;
+        this.then = function (resolveFun, rejectFun) {
+          // 2.2.1 ✔️
+          var Promise2
 
-          if (_state === PROMISESTATE.FULFILLED &&
-            typeof promise._fullCalll[0] === 'function') {
-            isThen = promise._fullCalll[0](_value);
+          // pending 状态处理
+          if (self.PromiseStatus === 'PENDING') {
+            if (typeof resolveFun !== "function") {
+              resolveFun = new Function()
+            }
+            if (typeof rejectFun !== "function") {
+              rejectFun = new Function()
+            }
+            return Promise2 = new Promise(function (resolve, reject) {
+              callbackArr.push({
+                // 暂存resolveCall
+                resolveCall: function (result) {
+                  setTimeout(function () {
+                    try {
+                      var x = resolveFun(result)
+                      resolvePromise(Promise2, x, resolve, reject)
+                    } catch (e) {
+                      reject(e)
+                    }
+                    if (finallyCall) finallyCall()
+                  })
+                },
+                // 暂存rejectCall
+                rejectCall: function (result) {
+                  setTimeout(function () {
+                    try {
+                      var x = rejectFun(result)
+                      resolvePromise(Promise2, x, resolve, reject)
+                    } catch (e) {
+                      reject(e)
+                    }
+                    if (finallyCall) finallyCall()
+                  })
+                }
+              })
+            })
           }
-          ;
-          if (_state === PROMISESTATE.REJECTED &&
-            typeof promise._rejCall[0] === 'function') {
-            isThen = promise._rejCall[0](_value);
+
+          // resolve 状态处理
+          if (self.PromiseStatus === 'RESOLVE') {
+            return Promise2 = new Promise(function (resolve, reject) {
+              // 2.2.7.3 ✔️
+              if (typeof resolveFun !== 'function') {
+                resolve(self.PromiseValue)
+              } else {
+                try {
+                  setTimeout(function () {
+                    var x = resolveFun(self.PromiseValue)
+                    resolvePromise(Promise2, x, resolve, reject)
+                  })
+                } catch (e) {
+                  reject(e)
+                }
+              }
+            })
           }
-          ;
-          //对于是否可以继续进行then做判断
-          //  1. 不可then的，直接return结束（条件：无返回值、返回值不是promise对象的）
-          //  2. 对于可以then的，将then的回调进行处理，然后对象之间传递。
-          if (isThen === undefined || !(typeof isThen === 'object' && isThen._name === 'promise')) return;
 
-          promise._fullCalll.shift();
-          promise._rejCall.shift();      //清除当前对象使用过的对调
-          isThen._fullCalll = promise._fullCalll;
-          isThen._rejCall = promise._rejCall;  //将剩下的回调传递到下一个对象
-        };
-
-        //promimse入口
-        function doResolve(fn) {
-          var promise = this;
-          fn(function (param) {
-            setState.call(promise, PROMISESTATE.FULFILLED, param);
-          }, function (reason) {
-            setState.call(promise, PROMISESTATE.REJECTED, reason);
-          });
-        };
-
-        //函数then，处理回调，返回对象保证链式调用
-        this.then = function (onFulfilled, onRejected) {
-          this._fullCalll.push(onFulfilled);
-          this._rejCall.push(onRejected);
-          return this;
+          // reject 状态处理
+          if (self.PromiseStatus === 'REJECT') {
+            return Promise2 = new Promise(function (resolve, reject) {
+              setTimeout(function () {
+                // 2.2.7.4 ✔️
+                if (typeof rejectFun !== 'function') {
+                  reject(rejectFun)
+                } else {
+                  try {
+                    setTimeout(function () {
+                      var x = rejectFun(self.PromiseValue)
+                      resolvePromise(Promise2, x, resolve, reject)
+                    })
+                  } catch (e) {
+                    reject(e)
+                  }
+                }
+              })
+            })
+          }
         }
 
-        doResolve.call(promise, fn);
-      };
+        // 由then方法实现catch方法
+        this.catch = function (onRejected) {
+          return this.then(null, onRejected)
+        }
+
+        // finally方法
+        this.finally = function (callback) {
+          finallyCall = callback
+        }
+
+        // 同步promise2和x状态
+        function resolvePromise(promise2, x, resolve, reject) {
+          // 2.3.1 ✔️
+          if (promise2 === x) {
+            return reject(new TypeError('promise and x refer to the same object'))
+          }
+
+          if (x instanceof Promise) {
+            // 2.3.2 ✔️
+            if (x.PromiseStatus === 'PENDING') {
+              return x.then(resolve, reject)
+            }
+            if (x.PromiseStatus === 'RESOLVE') {
+              return resolve(x.PromiseValue)
+            }
+            if (x.PromiseStatus === 'REJECT') {
+              return reject(x.PromiseValue)
+            }
+          } else {
+            if (typeof x === 'object' || typeof x === 'function') {
+              var then;
+              // 2.3.3.2 ✔️
+              try {
+                then = x.then
+              } catch (e) {
+                return reject(e)
+              }
+
+              if (typeof then === 'function') {
+                try {
+                  then.call(x, function (y) {
+                    return resolvePromise(promise2, y, resolve, reject)
+                  }, function (r) {
+                    return reject(r)
+                  })
+                } catch (e) {
+                  return reject(e)
+                }
+              } else {
+                return resolve(x)
+              }
+            } else {
+              return resolve(x)
+            }
+          }
+        }
+
+        // resolve状态变化
+        function resolveFun(result) {
+          // 2.2.2 ✔️
+          setTimeout(function () {
+            if (self.PromiseStatus === 'PENDING') {
+              self.PromiseStatus = 'RESOLVE'
+              self.PromiseValue = result
+              // 2.2.2.3 ✔️
+              if (callbackArr[0]) {
+                callbackArr[0].resolveCall(result)   // 2.2.5 ✔️
+              }
+            }
+          })
+        }
+
+        // reject状态变化
+        function rejectFun(result) {
+          // 2.2.3 ✔️
+          setTimeout(function () {
+            if (self.PromiseStatus === 'PENDING') {
+              self.PromiseStatus = 'REJECT'
+              self.PromiseValue = result
+              if (callbackArr[0]) {
+                // 2.2.3.3 ✔️
+                callbackArr[0].rejectCall(result)    // 2.2.5 ✔️
+              }
+            }
+          })
+        }
+
+        // 2.2.4 执行平台代码 ✔️
+        fn(resolveFun, rejectFun)
+      }
+      Promise.all = function (arr) {
+        var temp = []
+        tool.each(arr, function (x) {
+          temp.push(Promise.resolve(x))
+        })
+
+        return new Promise(function (res, rej) {
+          var resValue = [], isReject = false
+          tool.each(temp, function (x) {
+            x.then(function (value) {
+              resValue.push(value)
+              if (resValue.length === temp.length) res(resValue)
+            }, function (reason) {
+              if (!isReject) {
+                rej(reason)
+                isReject = true
+              }
+            })
+          })
+        })
+      }
+      Promise.race = function (arr) {
+        var temp = arr.map(x => {
+          return Promise.resolve(x)
+        })
+
+        return new Promise(function (res, rej) {
+          var isComplete = false
+          tool.each(temp, function (x) {
+            x.then(function (value) {
+              if (!isComplete) {
+                res(value)
+                isComplete = true
+              }
+            }, function (reason) {
+              if (!isComplete) {
+                rej(reason)
+                isComplete = true
+              }
+            })
+          })
+        })
+
+      }
+      Promise.resolve = function (param) {
+        if (param instanceof Promise) {
+          return param
+        } else {
+          if (param !== null && typeof param === 'object' && param.then && typeof param.then === "function") {
+            return new Promise(param.then)
+          } else {
+            return new Promise(function (res, rej) {
+              res(param)
+            })
+          }
+        }
+      }
+      Promise.reject = function (param) {
+        return new Promise(function (res, rej) {
+          rej(param)
+        })
+      }
       window.Promise = newPromise;
     },
     //监控浏览器的错误日志
@@ -466,68 +646,75 @@
     },
     // 请求池申请请求使用
     useRequestPool: function (param) {
-      // 判断请求池中是否有可用请求
-      if (selfData.requestPool.length !== 0) {
-        var temp = selfData.requestPool.shift(), sendData = '', tempHeader = {}
-        // 赋值操作,将数据捆绑到原型上
-        temp.callback_success = param.successEvent
-        temp.callback_error = param.errorEvent
-        temp.callback_timeout = param.timeoutEvent
-        temp.data = param.data
-
-        // 处理参数
-        switch (param.contentType) {
-          case '':
-            tool.each(tool.MergeObject(param.data, initParam.publicData), function (item, index) {
-              sendData += (index + "=" + item + "&")
-            });
-            sendData = sendData.slice(0, -1);
-            break
-          case 'json':
-            sendData = JSON.stringify(tool.MergeObject(param.data, initParam.publicData))
-            break
-          case 'form':
-            if (!tool.isEmptyObject(initParam.publicData)) {
-              tool.each(initParam.publicData, function (item, index) {
-                param.data.append(index, item)
-              })
-            }
-            sendData = param.data
-            break
-        }
-
-        //判断请求类型
-        if (param.type === 'get') {
-          temp.open(param.type, tool.checkRealUrl(param.url, temp) + (sendData === '' ? '' : ('?' + sendData)))
-        } else {
-          temp.open(param.type, tool.checkRealUrl(param.url, temp))
-        }
-
-        param.responseType ? (temp.responseType = param.responseType) : null
-
-        if (!isNaN(tool.getIEVersion())) {
-          temp.timeout = temp._timeout
-        }
-
-        switch (param.contentType) {
-          case '':
-            tempHeader['Content-Type'] = 'application/x-www-form-urlencoded'
-            break
-          case 'json':
-            tempHeader['Content-Type'] = 'application/json'
-            break
-        }
-
-        //设置http协议的头部
-        tool.each(tool.MergeObject(tempHeader, initParam.requestHeader), function (item, index) {
-          temp.setRequestHeader(index, item)
-        });
-
-        //发送请求
-        temp.send(param.type === 'get' ? '' : sendData);
+      // mock数据校验
+      var ajaxSetting = tool.checkParam(param)
+      var urlMockValue = ajaxSetting.mock.mockData[ajaxSetting.url]
+      if (ajaxSetting.mock.isOpen && urlMockValue) {
+        ajaxSetting.successEvent(urlMockValue)
       } else {
-        // 没有请求，加载到待发送队列中
-        selfData.queuePool.push(param)
+        // 判断请求池中是否有可用请求
+        if (selfData.requestPool.length !== 0) {
+          var temp = selfData.requestPool.shift(), sendData = '', tempHeader = {}
+          // 赋值操作,将数据捆绑到原型上
+          temp.callback_success = ajaxSetting.successEvent
+          temp.callback_error = ajaxSetting.errorEvent
+          temp.callback_timeout = ajaxSetting.timeoutEvent
+          temp.data = ajaxSetting.data
+
+          // 处理参数
+          switch (ajaxSetting.contentType) {
+            case '':
+              tool.each(tool.MergeObject(ajaxSetting.data, initParam.publicData), function (item, index) {
+                sendData += (index + "=" + item + "&")
+              });
+              sendData = sendData.slice(0, -1);
+              break
+            case 'json':
+              sendData = JSON.stringify(tool.MergeObject(ajaxSetting.data, initParam.publicData))
+              break
+            case 'form':
+              if (!tool.isEmptyObject(initParam.publicData)) {
+                tool.each(initParam.publicData, function (item, index) {
+                  ajaxSetting.data.append(index, item)
+                })
+              }
+              sendData = ajaxSetting.data
+              break
+          }
+
+          //判断请求类型
+          if (ajaxSetting.type === 'get') {
+            temp.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, temp) + (sendData === '' ? '' : ('?' + sendData)))
+          } else {
+            temp.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, temp))
+          }
+
+          ajaxSetting.responseType ? (temp.responseType = ajaxSetting.responseType) : null
+
+          if (!isNaN(tool.getIEVersion())) {
+            temp.timeout = temp._timeout
+          }
+
+          switch (ajaxSetting.contentType) {
+            case '':
+              tempHeader['Content-Type'] = 'application/x-www-form-urlencoded'
+              break
+            case 'json':
+              tempHeader['Content-Type'] = 'application/json'
+              break
+          }
+
+          //设置http协议的头部
+          tool.each(tool.MergeObject(tempHeader, initParam.requestHeader), function (item, index) {
+            temp.setRequestHeader(index, item)
+          });
+
+          //发送请求
+          temp.send(ajaxSetting.type === 'get' ? '' : sendData);
+        } else {
+          // 没有请求，加载到待发送队列中
+          selfData.queuePool.push(ajaxSetting)
+        }
       }
     },
     // 请求周期结束操作
@@ -548,211 +735,216 @@
       var ajaxSetting = tool.checkParam(options),
         sendData = '';
 
-      //创建xhr对象
-      var xhr = tool.createXhrObject();
-
-      //针对某些特定版本的mozillar浏览器的BUG进行修正
-      xhr.overrideMimeType ? (xhr.overrideMimeType("text/javascript")) : (null);
-
-      //针对IE8的xhr做处理    PS：ie8下的xhr无xhr.onload事件，所以这里做判断
-      xhr.onload === undefined ? (xhr.xhr_ie8 = true) : (xhr.xhr_ie8 = false);
-
-      //参数处理（get和post）,包括xhr.open     get:拼接好url再open   post:先open，再设置其他参数
-      if (ajaxSetting.data) {
-        switch (ajaxSetting.contentType) {
-          case '':
-            tool.each(tool.MergeObject(ajaxSetting.data, ajaxSetting.publicData), function (item, index) {
-              sendData += (index + "=" + item + "&")
-            });
-            sendData = sendData.slice(0, -1);
-            ajaxSetting.requestHeader['Content-Type'] = 'application/x-www-form-urlencoded'
-            break
-          case 'json':
-            sendData = JSON.stringify(tool.MergeObject(ajaxSetting.data, ajaxSetting.publicData))
-            ajaxSetting.requestHeader['Content-Type'] = 'application/json'
-            break
-          case 'form':
-            if (!tool.isEmptyObject(ajaxSetting.publicData)) {
-              tool.each(ajaxSetting.publicData, function (item, index) {
-                ajaxSetting.data.append(index, item)
-              })
-            }
-            sendData = ajaxSetting.data
-            // ajaxSetting.requestHeader['Content-Type'] = 'multipart/form-data'
-            break
-        }
-        //请求前处理参数
-        sendData = ajaxSetting.transformRequest(sendData)
-
-        //判断请求类型
-        if (ajaxSetting.type === 'get') {
-          xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, xhr) + '?' + sendData, ajaxSetting.async)
-        } else {
-          xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, xhr), ajaxSetting.async)
-        }
+      // mock数据校验
+      var urlMockValue = ajaxSetting.mock.mockData[ajaxSetting.url]
+      if (ajaxSetting.mock.isOpen && urlMockValue) {
+        ajaxSetting.successEvent(urlMockValue)
       } else {
-        xhr.open(ajaxSetting.type, ajaxSetting.baseURL + ajaxSetting.url, ajaxSetting.async)
-      }
+        //创建xhr对象
+        var xhr = tool.createXhrObject();
 
-      /*
-      * 同步请求注意事项
-      *   xhr.timeout必须为0
-      *   xhr.withCredentials必须为 false
-      *   xhr.responseType必须为""（注意置为"text"也不允许）
-      * */
-      if (ajaxSetting.async) {
-        xhr.timeout = ajaxSetting.timeout
-        xhr.responseType = ajaxSetting.responseType;
-        xhr.withCredentials = ajaxSetting.withCredentials;
-      } else {
-        //xhr.responseType = ""    // responseType在同步下。连设置都不允许
-        // xhr.timeout = 0  // timeout在同步下。连设置都不允许
-        xhr.withCredentials = false
-      }
+        //针对某些特定版本的mozillar浏览器的BUG进行修正
+        xhr.overrideMimeType ? (xhr.overrideMimeType("text/javascript")) : (null);
 
-      //设置http协议的头部
-      tool.each(ajaxSetting.requestHeader, function (item, index) {
-        xhr.setRequestHeader(index, item)
-      });
+        //针对IE8的xhr做处理    PS：ie8下的xhr无xhr.onload事件，所以这里做判断
+        xhr.onload === undefined ? (xhr.xhr_ie8 = true) : (xhr.xhr_ie8 = false);
 
-      //onload事件（IE8下没有该事件）
-      xhr.onload = function (e) {
-        if (this.readyState === 4 && (this.status == 200 || this.status == 304)) {
-          /*
-          *  ie浏览器全系列不支持responseType='json'和response取值，所以在ie下使用JSON.parse进行转换
-          * */
-          if (!isNaN(tool.getIEVersion())) {
-            if (this.responseType === 'json') {
-              this.callback_success ?
-                this.callback_success(ajaxSetting.transformResponse(JSON.parse(this.responseText))) :
-                ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(this.responseText)));
-            } else {
-              this.callback_success ?
-                this.callback_success(ajaxSetting.transformResponse(this.responseText)) :
-                ajaxSetting.successEvent(ajaxSetting.transformResponse(this.responseText));
-            }
+        //参数处理（get和post）,包括xhr.open     get:拼接好url再open   post:先open，再设置其他参数
+        if (ajaxSetting.data) {
+          switch (ajaxSetting.contentType) {
+            case '':
+              tool.each(tool.MergeObject(ajaxSetting.data, ajaxSetting.publicData), function (item, index) {
+                sendData += (index + "=" + item + "&")
+              });
+              sendData = sendData.slice(0, -1);
+              ajaxSetting.requestHeader['Content-Type'] = 'application/x-www-form-urlencoded'
+              break
+            case 'json':
+              sendData = JSON.stringify(tool.MergeObject(ajaxSetting.data, ajaxSetting.publicData))
+              ajaxSetting.requestHeader['Content-Type'] = 'application/json'
+              break
+            case 'form':
+              if (!tool.isEmptyObject(ajaxSetting.publicData)) {
+                tool.each(ajaxSetting.publicData, function (item, index) {
+                  ajaxSetting.data.append(index, item)
+                })
+              }
+              sendData = ajaxSetting.data
+              // ajaxSetting.requestHeader['Content-Type'] = 'multipart/form-data'
+              break
+          }
+          //请求前处理参数
+          sendData = ajaxSetting.transformRequest(sendData)
+
+          //判断请求类型
+          if (ajaxSetting.type === 'get') {
+            xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, xhr) + '?' + sendData, ajaxSetting.async)
           } else {
-            this.callback_success ?
-              this.callback_success(ajaxSetting.transformResponse(this.response)) :
-              ajaxSetting.successEvent(ajaxSetting.transformResponse(this.response));
+            xhr.open(ajaxSetting.type, tool.checkRealUrl(ajaxSetting.url, xhr), ajaxSetting.async)
           }
         } else {
-          /*
-           *  这边为了兼容IE8、9的问题，以及请求完成而造成的其他错误，比如404等
-           *   如果跨域请求在IE8、9下跨域失败不走onerror方法
-           *       其他支持了Level 2 的版本 直接走onerror
-           * */
+          xhr.open(ajaxSetting.type, ajaxSetting.baseURL + ajaxSetting.url, ajaxSetting.async)
+        }
+
+        /*
+        * 同步请求注意事项
+        *   xhr.timeout必须为0
+        *   xhr.withCredentials必须为 false
+        *   xhr.responseType必须为""（注意置为"text"也不允许）
+        * */
+        if (ajaxSetting.async) {
+          xhr.timeout = ajaxSetting.timeout
+          xhr.responseType = ajaxSetting.responseType;
+          xhr.withCredentials = ajaxSetting.withCredentials;
+        } else {
+          //xhr.responseType = ""    // responseType在同步下。连设置都不允许
+          // xhr.timeout = 0  // timeout在同步下。连设置都不允许
+          xhr.withCredentials = false
+        }
+
+        //设置http协议的头部
+        tool.each(ajaxSetting.requestHeader, function (item, index) {
+          xhr.setRequestHeader(index, item)
+        });
+
+        //onload事件（IE8下没有该事件）
+        xhr.onload = function (e) {
+          if (this.readyState === 4 && (this.status == 200 || this.status == 304)) {
+            /*
+            *  ie浏览器全系列不支持responseType='json'和response取值，所以在ie下使用JSON.parse进行转换
+            * */
+            if (!isNaN(tool.getIEVersion())) {
+              if (this.responseType === 'json') {
+                this.callback_success ?
+                  this.callback_success(ajaxSetting.transformResponse(JSON.parse(this.responseText))) :
+                  ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(this.responseText)));
+              } else {
+                this.callback_success ?
+                  this.callback_success(ajaxSetting.transformResponse(this.responseText)) :
+                  ajaxSetting.successEvent(ajaxSetting.transformResponse(this.responseText));
+              }
+            } else {
+              this.callback_success ?
+                this.callback_success(ajaxSetting.transformResponse(this.response)) :
+                ajaxSetting.successEvent(ajaxSetting.transformResponse(this.response));
+            }
+          } else {
+            /*
+             *  这边为了兼容IE8、9的问题，以及请求完成而造成的其他错误，比如404等
+             *   如果跨域请求在IE8、9下跨域失败不走onerror方法
+             *       其他支持了Level 2 的版本 直接走onerror
+             * */
+            this.callback_error ?
+              this.callback_error(e.currentTarget.status, e.currentTarget.statusText) :
+              ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
+
+            // 请求错误搜集
+            tool.uploadAjaxError({
+              type: 'request',
+              errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
+              errUrl: this.currentUrl,
+              errLine: this.status,
+              Browser: navigator.userAgent
+            })
+          }
+
+          // 生命周期结束之后返回数据池，不绑定状态（是否为成功或失败状态）
+          if (ajaxSetting.pool.isOpen) {
+            tool.responseOver(this)
+          }
+        };
+
+        //xmlhttprequest每次变化一个状态所监控的事件（可拓展）
+        xhr.onreadystatechange = function () {
+          switch (this.readyState) {
+            case 1://打开
+              //do something
+              break;
+            case 2://获取header
+              //do something
+              break;
+            case 3://请求
+              //do something
+              break;
+            case 4://完成
+              //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
+              if (this.xhr_ie8) {
+                if (this.status === 200 || this.status === 304) {
+                  if (this.responseType == "json") {
+                    this.callback_success ?
+                      this.callback_success(ajaxSetting.transformResponse(JSON.parse(this.responseText))) :
+                      ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(this.responseText)))
+                  } else {
+                    this.callback_success ?
+                      this.callback_success(ajaxSetting.transformResponse(this.responseText)) :
+                      ajaxSetting.successEvent(ajaxSetting.transformResponse(this.responseText))
+                  }
+                } else {
+                  // 请求错误搜集
+                  tool.uploadAjaxError({
+                    type: 'request',
+                    errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
+                    errUrl: this.currentUrl,
+                    errLine: this.status,
+                    Browser: navigator.userAgent
+                  })
+                }
+                // 针对IE8 请求池处理
+                if (ajaxSetting.pool.isOpen) {
+                  tool.responseOver(this)
+                }
+              } else {
+                if (this.status === 0) {
+                  // 发送不存在请求，将不会走onload，直接这里就挂了，请求归还请求池
+                  if (ajaxSetting.pool.isOpen) {
+                    tool.responseOver(this)
+                  }
+                }
+              }
+              break;
+          }
+          ;
+        };
+
+        //ontimeout超时事件
+        xhr.ontimeout = function (e) {
+          this.callback_timeout ?
+            this.callback_timeout("000000", e ? (e.type) : ("timeoutEvent")) :
+            ajaxSetting.timeoutEvent("000000", e ? (e.type) : ("timeoutEvent"));   //IE8 没有e参数
+          this.abort();  //关闭请求
+          // 请求错误搜集
+          tool.uploadAjaxError({
+            type: 'request',
+            errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
+            errUrl: this.currentUrl,
+            errLine: 'timeout',
+            Browser: navigator.userAgent
+          })
+        };
+
+        //错误事件，直接ajax失败，而不走onload事件
+        xhr.onerror = function (e, x, xx, xxx, xxxx) {
           this.callback_error ?
-            this.callback_error(e.currentTarget.status, e.currentTarget.statusText) :
-            ajaxSetting.errorEvent(e.currentTarget.status, e.currentTarget.statusText);
+            this.callback_error(e) :
+            ajaxSetting.errorEvent(e)
 
           // 请求错误搜集
           tool.uploadAjaxError({
             type: 'request',
             errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
             errUrl: this.currentUrl,
-            errLine: this.status,
+            errLine: 'RequestErr',
             Browser: navigator.userAgent
           })
+        };
+
+        if (!isCreatePoll) {
+          //发送请求
+          xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
+        } else {
+          selfData.xhr = xhr
         }
-
-        // 生命周期结束之后返回数据池，不绑定状态（是否为成功或失败状态）
-        if (ajaxSetting.pool.isOpen) {
-          tool.responseOver(this)
-        }
-      };
-
-      //xmlhttprequest每次变化一个状态所监控的事件（可拓展）
-      xhr.onreadystatechange = function () {
-        switch (this.readyState) {
-          case 1://打开
-            //do something
-            break;
-          case 2://获取header
-            //do something
-            break;
-          case 3://请求
-            //do something
-            break;
-          case 4://完成
-            //在ie8下面，无xhr的onload事件，只能放在此处处理回调结果
-            if (this.xhr_ie8) {
-              if (this.status === 200 || this.status === 304) {
-                if (this.responseType == "json") {
-                  this.callback_success ?
-                    this.callback_success(ajaxSetting.transformResponse(JSON.parse(this.responseText))) :
-                    ajaxSetting.successEvent(ajaxSetting.transformResponse(JSON.parse(this.responseText)))
-                } else {
-                  this.callback_success ?
-                    this.callback_success(ajaxSetting.transformResponse(this.responseText)) :
-                    ajaxSetting.successEvent(ajaxSetting.transformResponse(this.responseText))
-                }
-              } else {
-                // 请求错误搜集
-                tool.uploadAjaxError({
-                  type: 'request',
-                  errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
-                  errUrl: this.currentUrl,
-                  errLine: this.status,
-                  Browser: navigator.userAgent
-                })
-              }
-              // 针对IE8 请求池处理
-              if (ajaxSetting.pool.isOpen) {
-                tool.responseOver(this)
-              }
-            } else {
-              if (this.status === 0) {
-                // 发送不存在请求，将不会走onload，直接这里就挂了，请求归还请求池
-                if (ajaxSetting.pool.isOpen) {
-                  tool.responseOver(this)
-                }
-              }
-            }
-            break;
-        }
-        ;
-      };
-
-      //ontimeout超时事件
-      xhr.ontimeout = function (e) {
-        this.callback_timeout ?
-          this.callback_timeout("000000", e ? (e.type) : ("timeoutEvent")) :
-          ajaxSetting.timeoutEvent("000000", e ? (e.type) : ("timeoutEvent"));   //IE8 没有e参数
-        this.abort();  //关闭请求
-        // 请求错误搜集
-        tool.uploadAjaxError({
-          type: 'request',
-          errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
-          errUrl: this.currentUrl,
-          errLine: 'timeout',
-          Browser: navigator.userAgent
-        })
-      };
-
-      //错误事件，直接ajax失败，而不走onload事件
-      xhr.onerror = function (e, x, xx, xxx, xxxx) {
-        this.callback_error ?
-          this.callback_error(e) :
-          ajaxSetting.errorEvent(e)
-
-        // 请求错误搜集
-        tool.uploadAjaxError({
-          type: 'request',
-          errInfo: JSON.stringify(this.data ? this.data : ajaxSetting.data),
-          errUrl: this.currentUrl,
-          errLine: 'RequestErr',
-          Browser: navigator.userAgent
-        })
-      };
-
-      if (!isCreatePoll) {
-        //发送请求
-        xhr.send(ajaxSetting.type === 'get' ? '' : sendData);
-      } else {
-        selfData.xhr = xhr
       }
-
     },
     //设置ajax全局配置文件
     config: function (config) {
@@ -772,98 +964,81 @@
       }
     },
     //异步get请求
-    get: function (url, data, successEvent, errorEvent, timeoutEvent) {
-      var ajaxParam = {
-        type: "get",
-        url: url,
-        data: data,
-        contentType: '',
-        successEvent: successEvent,
-        errorEvent: errorEvent,
-        timeoutEvent: timeoutEvent
-      };
-      if (initParam.pool.isOpen) {
-        tool.useRequestPool(ajaxParam)
-      } else {
-        tempObj.common(ajaxParam);
-      }
+    get: function (url, data) {
+      return new Promise(function (res, rej) {
+        var ajaxParam = {
+          type: "get",
+          url: url,
+          data: data,
+          contentType: '',
+          successEvent: res,
+          errorEvent: rej,
+          timeoutEvent: rej
+        };
+        if (initParam.pool.isOpen) {
+          tool.useRequestPool(ajaxParam)
+        } else {
+          tempObj.common(ajaxParam);
+        }
+      })
     },
     //异步post请求
-    post: function (url, data, successEvent, errorEvent, timeoutEvent) {
-      var ajaxParam = {
-        type: "post",
-        url: url,
-        data: data,
-        contentType: '',
-        successEvent: successEvent,
-        errorEvent: errorEvent,
-        timeoutEvent: timeoutEvent
-      };
+    post: function (url, data) {
+      return new Promise(function (res, rej) {
+        var ajaxParam = {
+          type: "post",
+          url: url,
+          data: data,
+          contentType: 'json',
+          successEvent: res,
+          errorEvent: rej,
+          timeoutEvent: rej
+        };
 
-      if (initParam.pool.isOpen) {
-        tool.useRequestPool(ajaxParam)
-      } else {
-        tempObj.common(ajaxParam);
-      }
+        if (initParam.pool.isOpen) {
+          tool.useRequestPool(ajaxParam)
+        } else {
+          tempObj.common(ajaxParam);
+        }
+      })
     },
     //异步post请求
-    postJSON: function (url, data, successEvent, errorEvent, timeoutEvent) {
-      var ajaxParam = {
-        type: "post",
-        url: url,
-        data: data,
-        contentType: 'json',
-        successEvent: successEvent,
-        errorEvent: errorEvent,
-        timeoutEvent: timeoutEvent
-      };
-      if (initParam.pool.isOpen) {
-        tool.useRequestPool(ajaxParam)
-      } else {
-        tempObj.common(ajaxParam);
-      }
-    },
-    //异步post请求
-    postFormData: function (url, formData, successEvent, errorEvent, timeoutEvent) {
-      var ajaxParam = {
-        type: "post",
-        url: url,
-        data: formData,
-        contentType: 'form',
-        successEvent: successEvent,
-        errorEvent: errorEvent,
-        timeoutEvent: timeoutEvent
-      };
-      if (initParam.pool.isOpen) {
-        tool.useRequestPool(ajaxParam)
-      } else {
-        tempObj.common(ajaxParam);
-      }
+    postFormData: function (url, formData) {
+      return new Promise(function (res, rej) {
+        var ajaxParam = {
+          type: "post",
+          url: url,
+          data: formData,
+          contentType: 'form',
+          successEvent: res,
+          errorEvent: rej,
+          timeoutEvent: rej
+        };
+        if (initParam.pool.isOpen) {
+          tool.useRequestPool(ajaxParam)
+        } else {
+          tempObj.common(ajaxParam);
+        }
+      })
     },
     //获取blob数据集
-    obtainBlob: function (type, url, data, successEvent, errorEvent, timeoutEvent) {
-      var ajaxParam = {
-        type: type,
-        url: url,
-        data: data,
-        responseType: 'blob',
-        successEvent: successEvent,
-        errorEvent: errorEvent,
-        timeoutEvent: timeoutEvent
-      };
-      if (initParam.pool.isOpen) {
-        tool.useRequestPool(ajaxParam)
-      } else {
-        tempObj.common(ajaxParam);
-      }
-    },
-    //集成promise的ajax请求(默认设置post和get请求，如有其他需求，可自己拓展)
-    promiseAjax: function (url, data, type) {
-      if (!window.Promise) tool.createPromise();  //保证浏览器的兼容性
-      return new Promise(function (resolve, reject) {
-        if (type === undefined) tempObj.post(url, data, resolve, reject);
-        else tempObj.get(url, data, resolve, reject);
-      });
+    obtainBlob: function (type, url, data) {
+      return new Promise(function (res, rej) {
+        var ajaxParam = {
+          type: type,
+          url: url,
+          data: data,
+          responseType: 'blob',
+          successEvent: res,
+          errorEvent: rej,
+          timeoutEvent: rej
+        };
+        if (initParam.pool.isOpen) {
+          tool.useRequestPool(ajaxParam)
+        } else {
+          tempObj.common(ajaxParam);
+        }
+      })
     },
     /*
      * 长轮询的实现
@@ -880,7 +1055,7 @@
         type: type,
         url: url,
         data: data,
-        contentType: 'json',
+        contentType: '',
         successEvent: function (dateCall) {
           successEvent(dateCall, this);
           if (!this.stop) {
@@ -909,7 +1084,7 @@
     /*
      *   ajax上传文件 -- level2的新特性，请保证你的项目支持新的特性再使用
      *       url                 文件上传地址
-     *       file                input=file 选择的文件
+     *       fileSelector        input=file 选择器
      *       size                文件限制大小
      *       fileType            文件限制类型 mime类型
      *       successEvent             上传成功处理
@@ -920,47 +1095,49 @@
      *                    1      超出文件限制大小
      *                    2      非允许文件格式
      * */
-    upload: function (url, file, size, fileType, successEvent, errorEvent, timeoutEvent) {
-      var formdata = new FormData(),
-        fileCount = file.length, data = {},
-        result = {};
-      //以下为上传文件限制检查
-      if (fileCount > 0) {
-        tool.each(Array.prototype.slice.call(file), function (value) {
-          //检查文件大小
-          if (value.size > size) {
-            result["status"] = 1;
-            result["errMsg"] = "超出文件限制大小";
-          } else {
-            if (fileType != "*") {
-              //检查文件格式.因为支持formdata，自然支持数组的indexof(h5)
-              if (fileType.indexOf(value.type) === -1) {
-                result["status"] = 2;
-                result["errMsg"] = "非允许文件格式";
+    upload: function (url, file, size, fileType) {
+      return new Promise(function (res, rej) {
+        var formdata = new FormData(),
+          fileCount = file.length, data = {},
+          result = {};
+        //以下为上传文件限制检查
+        if (fileCount > 0) {
+          tool.each(Array.prototype.slice.call(file), function (value) {
+            //检查文件大小
+            if (value.size > size) {
+              result["status"] = 1;
+              result["errMsg"] = "超出文件限制大小";
+            } else {
+              if (fileType != "*") {
+                //检查文件格式.因为支持formdata，自然支持数组的indexof(h5)
+                if (fileType.indexOf(value.type) === -1) {
+                  result["status"] = 2;
+                  result["errMsg"] = "非允许文件格式";
+                } else {
+                  formdata.append(value.name, value);
+                }
+                ;
               } else {
                 formdata.append(value.name, value);
               }
-              ;
-            } else {
-              formdata.append(value.name, value);
             }
-          }
-          ;
-        });
-      } else {
-        result["status"] = 0;
-        result["errMsg"] = "请选择文件";
-      }
-      ;
+            ;
+          });
+        } else {
+          result["status"] = 0;
+          result["errMsg"] = "请选择文件";
+        }
+        ;
 
-      if (result.status !== undefined) return result;   //如果有错误信息直接抛出去,结束运行
+        if (result.status !== undefined) rej(result);   //如果有错误信息直接抛出去,结束运行
 
-      tempObj.postFormData(url, formdata, successEvent, errorEvent, timeoutEvent)
+        return tempObj.postFormData(url, formdata).then(res, rej)
+      })
     },
     /*
      *   ajax大文件切割上传(支持单个文件)  -- level2的新特性，请保证你的项目支持新的特性再使用
      *       url                 文件上传地址
-     *       file                input=file 选中的文件
+     *       file                input=file选中的文件
      *       cutSize             切割文件大小
      *       fileType            文件限制类型 mime类型
      *       successEvent        上传成功处理
