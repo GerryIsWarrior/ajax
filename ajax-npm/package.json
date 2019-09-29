@@ -4,12 +4,13 @@
   "description": "a project for data transmission",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "login": "npm login --registry=https://npm.pkg.github.com/"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/GerryIsWarrior/ajax.git"
   },
+  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
   "keywords": [
     "ajax",
     "javascript",
